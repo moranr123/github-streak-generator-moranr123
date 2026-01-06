@@ -1,9 +1,10 @@
+// /src/controllers/streakController.js
 import { fetchGitHubData } from "../services/githubService.js";
 import { calculateStreaks } from "../utils/streakCalculator.js";
 import redisClient from "../utils/redisClient.js";
 import { generateStreakCard } from "../utils/streakCard.js";
 
-// Existing JSON API
+// JSON API (optional)
 export const getStreak = async (req, res) => {
   const { username } = req.params;
   try {
@@ -11,10 +12,12 @@ export const getStreak = async (req, res) => {
     if (cached) return res.json(JSON.parse(cached));
 
     const contributions = await fetchGitHubData(username);
-    const streaks = calculateStreaks(contributions);
-    const result = { username, ...streaks };
+    const { current, longest } = calculateStreaks(contributions);
+    const total = contributions.reduce((sum, day) => sum + day.count, 0);
 
-    await redisClient.setEx(username, 24*60*60, JSON.stringify(result));
+    const result = { username, current, longest, total };
+    await redisClient.setEx(username, 24 * 60 * 60, JSON.stringify(result));
+
     res.json(result);
   } catch (err) {
     console.error(err);
@@ -22,28 +25,24 @@ export const getStreak = async (req, res) => {
   }
 };
 
-// NEW: PNG card API
+// PNG Card API
 export const getStreakCard = async (req, res) => {
   const { username } = req.params;
   try {
-    const cached = await redisClient.get(`card:${username}`);
-    if (cached) {
-      console.log("Cache hit for card ✅");
-      res.setHeader("Content-Type", "image/png");
-      return res.send(Buffer.from(cached, "base64"));
-    }
-
     const contributions = await fetchGitHubData(username);
     const { current, longest } = calculateStreaks(contributions);
+    const total = contributions.reduce((sum, day) => sum + day.count, 0);
 
-    const buffer = await generateStreakCard({ username, current, longest });
+    // Debug logging
+    console.log(`Card generation for ${username}: current=${current}, longest=${longest}, total=${total}`);
 
-    // Cache as base64 string for simplicity
-    await redisClient.setEx(`card:${username}`, 24*60*60, buffer.toString("base64"));
+    // Optional: fetch avatar from GitHub
+    const avatarUrl = `https://github.com/${username}.png`;
+
+    const buffer = await generateStreakCard({ username, current, longest, total, avatarUrl });
 
     res.setHeader("Content-Type", "image/png");
     res.send(buffer);
-
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to generate streak card" });
