@@ -233,6 +233,26 @@ function App() {
     copyToClipboard(shareUrlText)
   }
 
+  const shareToTwitter = () => {
+    const text = `Check out my GitHub contribution streak! 🔥`
+    const url = getShareUrl()
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
+    window.open(twitterUrl, '_blank', 'width=550,height=420')
+  }
+
+  const shareToLinkedIn = () => {
+    const url = getShareUrl()
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`
+    window.open(linkedInUrl, '_blank', 'width=550,height=420')
+  }
+
+  const shareToReddit = () => {
+    const text = `Check out my GitHub contribution streak!`
+    const url = getShareUrl()
+    const redditUrl = `https://www.reddit.com/submit?title=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`
+    window.open(redditUrl, '_blank', 'width=550,height=420')
+  }
+
   const handleImageLoad = () => {
     setImageLoading(false)
     setImageError(false)
