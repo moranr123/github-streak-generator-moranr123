@@ -21,6 +21,7 @@ function App() {
   // Card customization
   const [fontSize, setFontSize] = useState('normal')
   const [hideAvatar, setHideAvatar] = useState(false)
+  const [cardSize, setCardSize] = useState('normal')
   
   // Export format
   const [exportFormat, setExportFormat] = useState('png')
@@ -44,6 +45,38 @@ function App() {
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
   
+  // Load from URL parameters on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const urlUsername = params.get('username')
+    const urlTheme = params.get('theme')
+    const urlFontSize = params.get('fontSize')
+    const urlHideAvatar = params.get('hideAvatar')
+    const urlCardSize = params.get('cardSize')
+    
+    if (urlUsername) setUsername(urlUsername)
+    if (urlTheme) setTheme(urlTheme)
+    if (urlFontSize) setFontSize(urlFontSize)
+    if (urlHideAvatar === 'true') setHideAvatar(true)
+    if (urlCardSize) setCardSize(urlCardSize)
+  }, [])
+  
+  // Update URL when settings change
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (username) params.set('username', username)
+    if (theme) params.set('theme', theme)
+    if (fontSize !== 'normal') params.set('fontSize', fontSize)
+    if (hideAvatar) params.set('hideAvatar', 'true')
+    if (cardSize !== 'normal') params.set('cardSize', cardSize)
+    
+    const newUrl = params.toString() 
+      ? `${window.location.pathname}?${params.toString()}`
+      : window.location.pathname
+    
+    window.history.replaceState({}, '', newUrl)
+  }, [username, theme, fontSize, hideAvatar, cardSize])
+  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (e) => {
@@ -62,7 +95,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [error])
 
-  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption) => {
+  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardSizeOption) => {
     const params = new URLSearchParams()
     if (themeColor && themeColor.trim()) {
       params.append('theme', themeColor)
@@ -72,6 +105,9 @@ function App() {
     }
     if (hideAvatarOption) {
       params.append('hideAvatar', 'true')
+    }
+    if (cardSizeOption && cardSizeOption !== 'normal') {
+      params.append('cardSize', cardSizeOption)
     }
     
     const queryString = params.toString()
@@ -111,7 +147,7 @@ function App() {
     setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar)
+      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardSize)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     } catch (err) {
@@ -132,7 +168,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar)
+      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar, cardSize)
       // Add timestamp to force browser to reload the image
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
@@ -147,7 +183,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar)
+      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar, cardSize)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -161,10 +197,36 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar)
+      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar, cardSize)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
+  }
+
+  const handleCardSizeChange = (e) => {
+    const newCardSize = e.target.value
+    setCardSize(newCardSize)
+    // Regenerate card URL if username exists
+    if (username.trim()) {
+      setImageLoading(true)
+      setImageError(false)
+      setError('')
+      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, newCardSize)
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+      setCardUrl(url)
+    }
+  }
+
+  const shareUrl = () => {
+    const params = new URLSearchParams()
+    if (username) params.set('username', username)
+    if (theme) params.set('theme', theme)
+    if (fontSize !== 'normal') params.set('fontSize', fontSize)
+    if (hideAvatar) params.set('hideAvatar', 'true')
+    if (cardSize !== 'normal') params.set('cardSize', cardSize)
+    
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`
+    copyToClipboard(shareUrl)
   }
 
   const handleImageLoad = () => {
@@ -403,6 +465,20 @@ function App() {
                 </div>
 
                 <div className="input-group">
+                  <label htmlFor="cardSize">Card Size</label>
+                  <select
+                    id="cardSize"
+                    value={cardSize}
+                    onChange={handleCardSizeChange}
+                    className="theme-select"
+                  >
+                    <option value="compact">Compact</option>
+                    <option value="normal">Normal</option>
+                    <option value="large">Large</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
                   <label htmlFor="exportFormat">Export Format</label>
                   <select
                     id="exportFormat"
@@ -457,6 +533,9 @@ function App() {
                       </button>
                       <button onClick={copyUrl} className="copy-button">
                         Copy Markdown Link
+                      </button>
+                      <button onClick={shareUrl} className="copy-button">
+                        Share URL
                       </button>
                       <button onClick={downloadCard} className="copy-button download-button">
                         Download ({exportFormat.toUpperCase()})

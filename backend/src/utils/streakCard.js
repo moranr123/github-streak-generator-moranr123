@@ -10,6 +10,7 @@ export async function generateStreakCard({
   colors = {}, 
   fontSize = 'normal', 
   hideAvatar = false,
+  cardSize = 'normal',
   currentRange = null,
   longestRange = null,
   firstContribution = null,
@@ -28,8 +29,11 @@ export async function generateStreakCard({
   
   // Merge with custom colors
   const cardColors = { ...defaultColors, ...colors };
-  const width = 800;
-  const height = 400;
+  
+  // Calculate card dimensions based on size
+  const sizeMultiplier = cardSize === 'compact' ? 0.75 : cardSize === 'large' ? 1.25 : 1.0;
+  const width = Math.round(800 * sizeMultiplier);
+  const height = Math.round(400 * sizeMultiplier);
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
@@ -42,8 +46,9 @@ export async function generateStreakCard({
   ctx.lineWidth = 0;
   ctx.fillRect(0, 0, width, height);
 
-  // Calculate font sizes based on fontSize parameter
+  // Calculate font sizes based on fontSize parameter and card size
   const fontSizeMultiplier = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.15 : 1.0;
+  const combinedMultiplier = fontSizeMultiplier * sizeMultiplier;
 
   // Load avatar with border (only if not hidden)
   if (avatarUrl && !hideAvatar) {
@@ -51,8 +56,8 @@ export async function generateStreakCard({
       const avatar = await loadImage(avatarUrl);
       // Draw avatar with circular border at top center
       const avatarX = width / 2;
-      const avatarY = 50;
-      const avatarRadius = 35;
+      const avatarY = 50 * sizeMultiplier;
+      const avatarRadius = 35 * sizeMultiplier;
       
       ctx.save();
       ctx.beginPath();
@@ -63,7 +68,7 @@ export async function generateStreakCard({
       
       // Avatar border
       ctx.strokeStyle = cardColors.text;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 * sizeMultiplier;
       ctx.beginPath();
       ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2);
       ctx.stroke();
@@ -78,16 +83,16 @@ export async function generateStreakCard({
   // Username below avatar (only if avatar is not hidden)
   if (!hideAvatar) {
     ctx.fillStyle = cardColors.text;
-    const usernameFontSize = Math.round(24 * fontSizeMultiplier);
+    const usernameFontSize = Math.round(24 * combinedMultiplier);
     ctx.font = `bold ${usernameFontSize}px 'Segoe UI', Arial, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillText(username, width / 2, 95);
+    ctx.fillText(username, width / 2, 95 * sizeMultiplier);
   }
-  const largeNumberSize = Math.round(64 * fontSizeMultiplier);
-  const labelSize = Math.round(16 * fontSizeMultiplier);
-  const dateSize = Math.round(14 * fontSizeMultiplier);
-  const circleNumberSize = Math.round(48 * fontSizeMultiplier);
+  const largeNumberSize = Math.round(64 * combinedMultiplier);
+  const labelSize = Math.round(16 * combinedMultiplier);
+  const dateSize = Math.round(14 * combinedMultiplier);
+  const circleNumberSize = Math.round(48 * combinedMultiplier);
 
   // Helper function to format date
   const formatDate = (dateStr) => {
@@ -105,10 +110,10 @@ export async function generateStreakCard({
   };
 
   // Stats container - centered vertically (below username/avatar)
-  const statsY = hideAvatar ? 80 : 140;
-  const statsHeight = height - statsY - 40;
-  const sectionWidth = (width - 120) / 3; // Three equal sections with padding
-  const sectionPadding = 40;
+  const statsY = (hideAvatar ? 80 : 140) * sizeMultiplier;
+  const statsHeight = height - statsY - 40 * sizeMultiplier;
+  const sectionWidth = (width - 120 * sizeMultiplier) / 3; // Three equal sections with padding
+  const sectionPadding = 40 * sizeMultiplier;
   const sectionCenterY = statsY + statsHeight / 2;
 
   // Left Section: Total Contributions
@@ -116,9 +121,9 @@ export async function generateStreakCard({
   const leftCenterX = leftX + sectionWidth / 2;
   
   // Calculate vertical spacing for left section
-  const leftNumberY = sectionCenterY - 50;
-  const leftLabelY = sectionCenterY + 10;
-  const leftDateY = sectionCenterY + 35;
+  const leftNumberY = sectionCenterY - 50 * sizeMultiplier;
+  const leftLabelY = sectionCenterY + 10 * sizeMultiplier;
+  const leftDateY = sectionCenterY + 35 * sizeMultiplier;
   
   // Total number
   ctx.fillStyle = cardColors.totalCommits;
@@ -148,21 +153,21 @@ export async function generateStreakCard({
   const middleX = sectionPadding + sectionWidth;
   const middleCenterX = middleX + sectionWidth / 2;
   const circleY = sectionCenterY;
-  const circleRadius = 50;
+  const circleRadius = 50 * sizeMultiplier;
   
   // Draw circle outline
   ctx.strokeStyle = cardColors.text;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = 3 * sizeMultiplier;
   ctx.beginPath();
   ctx.arc(middleCenterX, circleY, circleRadius, 0, Math.PI * 2);
   ctx.stroke();
   
   // Flame icon above circle
   ctx.fillStyle = cardColors.currentStreak;
-  ctx.font = `bold ${32}px 'Segoe UI', Arial, sans-serif`;
+  ctx.font = `bold ${Math.round(32 * combinedMultiplier)}px 'Segoe UI', Arial, sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'bottom';
-  ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15);
+  ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15 * sizeMultiplier);
   
   // Number inside circle
   ctx.fillStyle = cardColors.currentStreak;
@@ -176,14 +181,14 @@ export async function generateStreakCard({
   ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
   const currentLabel = "Current Streak";
   ctx.textBaseline = 'top';
-  ctx.fillText(currentLabel, middleCenterX, circleY + circleRadius + 20);
+  ctx.fillText(currentLabel, middleCenterX, circleY + circleRadius + 20 * sizeMultiplier);
   
   // Date range
   if (currentRange && currentRange.start && currentRange.end) {
     ctx.fillStyle = cardColors.dateText;
     ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
     const dateRange = `${formatDateShort(currentRange.start)} - ${formatDateShort(currentRange.end)}`;
-    ctx.fillText(dateRange, middleCenterX, circleY + circleRadius + 40);
+    ctx.fillText(dateRange, middleCenterX, circleY + circleRadius + 40 * sizeMultiplier);
   }
 
   // Right Section: Longest Streak
@@ -191,9 +196,9 @@ export async function generateStreakCard({
   const rightCenterX = rightX + sectionWidth / 2;
   
   // Calculate vertical spacing for right section (same as left)
-  const rightNumberY = sectionCenterY - 50;
-  const rightLabelY = sectionCenterY + 10;
-  const rightDateY = sectionCenterY + 35;
+  const rightNumberY = sectionCenterY - 50 * sizeMultiplier;
+  const rightLabelY = sectionCenterY + 10 * sizeMultiplier;
+  const rightDateY = sectionCenterY + 35 * sizeMultiplier;
   
   // Longest number
   ctx.fillStyle = cardColors.longestStreak;
@@ -223,14 +228,14 @@ export async function generateStreakCard({
 
   // Vertical divider lines
   ctx.strokeStyle = cardColors.divider;
-  ctx.lineWidth = 1;
+  ctx.lineWidth = 1 * sizeMultiplier;
   ctx.beginPath();
-  ctx.moveTo(middleX, statsY + 20);
-  ctx.lineTo(middleX, statsY + statsHeight - 20);
+  ctx.moveTo(middleX, statsY + 20 * sizeMultiplier);
+  ctx.lineTo(middleX, statsY + statsHeight - 20 * sizeMultiplier);
   ctx.stroke();
   ctx.beginPath();
-  ctx.moveTo(rightX, statsY + 20);
-  ctx.lineTo(rightX, statsY + statsHeight - 20);
+  ctx.moveTo(rightX, statsY + 20 * sizeMultiplier);
+  ctx.lineTo(rightX, statsY + statsHeight - 20 * sizeMultiplier);
   ctx.stroke();
 
   return canvas.toBuffer("image/png");
