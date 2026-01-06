@@ -56,15 +56,15 @@ function App() {
   }
 
   const handleColorChange = (key, value) => {
-    setColors(prev => ({
-      ...prev,
-      [key]: value.replace('#', '')
-    }))
-    // Regenerate card URL if username exists
-    if (username.trim() && cardUrl) {
-      const newColors = { ...colors, [key]: value.replace('#', '') }
-      setCardUrl(generateCardUrl(username, newColors))
-    }
+    const newColorValue = value.replace('#', '')
+    setColors(prev => {
+      const updated = { ...prev, [key]: newColorValue }
+      // Regenerate card URL if username exists
+      if (username.trim() && cardUrl) {
+        setCardUrl(generateCardUrl(username, updated))
+      }
+      return updated
+    })
   }
 
   const copyToClipboard = async (text) => {
