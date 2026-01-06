@@ -1,5 +1,5 @@
 import express from "express";
-import { getStreak } from "../controllers/streakController.js";
+import { getStreak,getStreakCard } from "../controllers/streakController.js";
 
 const router = express.Router();
 
