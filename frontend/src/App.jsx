@@ -8,7 +8,7 @@ function App() {
   const [imageLoading, setImageLoading] = useState(false)
   const [error, setError] = useState('')
   const [imageError, setImageError] = useState(false)
-  const [theme, setTheme] = useState('')
+  const [theme, setTheme] = useState('ffffff')
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   
   // Dark mode state
@@ -569,14 +569,14 @@ function App() {
             <div className="left-section">
               <div className="input-group">
                 <label htmlFor="username">Username</label>
-                <input
-                  id="username"
-                  type="text"
-                  placeholder="Enter GitHub username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
-                />
+                      <input
+                        id="username"
+                        type="text"
+                        placeholder="moranr123"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
+                      />
               </div>
 
               <div className="input-group">
@@ -587,7 +587,6 @@ function App() {
                   onChange={handleThemeChange}
                   className="theme-select"
                 >
-                  <option value="">Select a theme</option>
                   {themes.map((themeOption) => (
                     <option key={themeOption.value} value={themeOption.value}>
                       {themeOption.label}
@@ -780,7 +779,7 @@ function App() {
                 <div className="placeholder">
                   <div className="preview-container">
                     <img 
-                      src={`${API_BASE}/card/morar123?theme=58a6ff`}
+                      src={`${API_BASE}/card/moranr123?theme=ffffff`}
                       alt="Preview Card" 
                       className="preview-image"
                       onError={(e) => {

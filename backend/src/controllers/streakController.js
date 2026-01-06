@@ -108,16 +108,37 @@ export const getStreakCard = async (req, res) => {
         return rgbToHex(r + (255 - r) * factor, g + (255 - g) * factor, b + (255 - b) * factor);
       };
       
-      // Apply theme colors - create a cohesive color scheme
-      colors.background = darken(themeHex, 0.12); // Very dark background (12% of original)
-      colors.backgroundGradient = darken(themeHex, 0.18); // Slightly lighter gradient (18% of original)
-      colors.border = darken(themeHex, 0.35); // Medium dark border (35% of original)
-      colors.text = lighten(themeHex, 0.85); // Very light text (85% towards white)
-      colors.accent = themeColor; // Theme color for accents
-      colors.avatarBorder = themeColor;
-      colors.totalCommits = themeColor;
-      colors.currentStreak = lighten(themeHex, 0.85); // Light text
-      colors.longestStreak = lighten(themeHex, 0.85); // Light text
+      // Check if this is a white/light theme (ffffff or very light colors)
+      const isLightTheme = themeHex.toLowerCase() === 'ffffff' || 
+                           (parseInt(themeHex.substring(0, 2), 16) > 240 && 
+                            parseInt(themeHex.substring(2, 4), 16) > 240 && 
+                            parseInt(themeHex.substring(4, 6), 16) > 240);
+      
+      if (isLightTheme) {
+        // Light theme: white/light background with dark text
+        colors.background = '#ffffff'; // White background
+        colors.backgroundGradient = '#f8f9fa'; // Very light gray gradient
+        colors.border = '#e1e4e8'; // Light gray border
+        colors.text = '#24292e'; // Dark text
+        colors.dateText = '#586069'; // Medium gray for dates
+        colors.accent = '#0366d6'; // Blue accent
+        colors.avatarBorder = '#24292e'; // Dark border
+        colors.totalCommits = '#24292e'; // Dark text
+        colors.currentStreak = '#f97316'; // Orange for current streak
+        colors.longestStreak = '#24292e'; // Dark text
+        colors.divider = '#e1e4e8'; // Light gray divider
+      } else {
+        // Dark theme: dark background with light text
+        colors.background = darken(themeHex, 0.12); // Very dark background (12% of original)
+        colors.backgroundGradient = darken(themeHex, 0.18); // Slightly lighter gradient (18% of original)
+        colors.border = darken(themeHex, 0.35); // Medium dark border (35% of original)
+        colors.text = lighten(themeHex, 0.85); // Very light text (85% towards white)
+        colors.accent = themeColor; // Theme color for accents
+        colors.avatarBorder = themeColor;
+        colors.totalCommits = themeColor;
+        colors.currentStreak = lighten(themeHex, 0.85); // Light text
+        colors.longestStreak = lighten(themeHex, 0.85); // Light text
+      }
       
       // Debug logging (development only)
       if (process.env.NODE_ENV === 'development') {
