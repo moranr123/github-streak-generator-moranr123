@@ -1,7 +1,22 @@
 // /src/utils/streakCard.js
 import { createCanvas, loadImage } from "canvas";
 
-export async function generateStreakCard({ username, current, longest, total, avatarUrl }) {
+export async function generateStreakCard({ username, current, longest, total, avatarUrl, colors = {} }) {
+  // Default colors
+  const defaultColors = {
+    background: "#0d1117",
+    backgroundGradient: "#161b22",
+    border: "#30363d",
+    text: "#f0f6fc",
+    accent: "#58a6ff",
+    currentStreak: "#f0f6fc",
+    longestStreak: "#f0f6fc",
+    totalCommits: "#7c3aed",
+    avatarBorder: "#58a6ff"
+  };
+  
+  // Merge with custom colors
+  const cardColors = { ...defaultColors, ...colors };
   const width = 800;
   const height = 400;
   const canvas = createCanvas(width, height);
@@ -9,14 +24,14 @@ export async function generateStreakCard({ username, current, longest, total, av
 
   // Modern gradient background
   const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, "#0d1117");
-  gradient.addColorStop(0.5, "#161b22");
-  gradient.addColorStop(1, "#0d1117");
+  gradient.addColorStop(0, cardColors.background);
+  gradient.addColorStop(0.5, cardColors.backgroundGradient);
+  gradient.addColorStop(1, cardColors.background);
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
   // Decorative border with rounded corners effect
-  ctx.strokeStyle = "#30363d";
+  ctx.strokeStyle = cardColors.border;
   ctx.lineWidth = 2;
   ctx.strokeRect(1, 1, width - 2, height - 2);
 
@@ -38,7 +53,7 @@ export async function generateStreakCard({ username, current, longest, total, av
       ctx.restore();
       
       // Avatar border
-      ctx.strokeStyle = "#58a6ff";
+      ctx.strokeStyle = cardColors.avatarBorder;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(70, 70, 45, 0, Math.PI * 2);
@@ -49,7 +64,7 @@ export async function generateStreakCard({ username, current, longest, total, av
   }
 
   // Username with modern styling
-  ctx.fillStyle = "#f0f6fc";
+  ctx.fillStyle = cardColors.text;
   ctx.font = "bold 32px 'Segoe UI', Arial, sans-serif";
   ctx.fillText(username, 150, 65);
 
@@ -71,10 +86,10 @@ export async function generateStreakCard({ username, current, longest, total, av
   const colWidth = 200;
 
   // Column 1: Current streak
-  ctx.fillStyle = "#58a6ff";
+  ctx.fillStyle = cardColors.accent;
   ctx.font = "bold 18px 'Segoe UI', Arial, sans-serif";
   ctx.fillText("Current Streak", col1X, statsY + 35);
-  ctx.fillStyle = "#f0f6fc";
+  ctx.fillStyle = cardColors.currentStreak;
   ctx.font = "bold 42px 'Segoe UI', Arial, sans-serif";
   const currentText = `${current}`;
   ctx.fillText(currentText, col1X, statsY + 80);
@@ -83,10 +98,10 @@ export async function generateStreakCard({ username, current, longest, total, av
   ctx.fillText("🔥", col1X + ctx.measureText(currentText).width + 10, statsY + 80);
 
   // Column 2: Longest streak
-  ctx.fillStyle = "#58a6ff";
+  ctx.fillStyle = cardColors.accent;
   ctx.font = "bold 18px 'Segoe UI', Arial, sans-serif";
   ctx.fillText("Longest Streak", col2X, statsY + 35);
-  ctx.fillStyle = "#f0f6fc";
+  ctx.fillStyle = cardColors.longestStreak;
   ctx.font = "bold 42px 'Segoe UI', Arial, sans-serif";
   const longestText = `${longest}`;
   ctx.fillText(longestText, col2X, statsY + 80);
@@ -95,10 +110,10 @@ export async function generateStreakCard({ username, current, longest, total, av
   ctx.fillText("🏆", col2X + ctx.measureText(longestText).width + 10, statsY + 80);
 
   // Column 3: Total commits - make it prominent
-  ctx.fillStyle = "#58a6ff";
+  ctx.fillStyle = cardColors.accent;
   ctx.font = "bold 18px 'Segoe UI', Arial, sans-serif";
   ctx.fillText("Total Commits", col3X, statsY + 35);
-  ctx.fillStyle = "#7c3aed";
+  ctx.fillStyle = cardColors.totalCommits;
   const totalText = total.toLocaleString();
   // Measure text width first to determine if we need smaller font
   ctx.font = "bold 42px 'Segoe UI', Arial, sans-serif";
@@ -113,12 +128,12 @@ export async function generateStreakCard({ username, current, longest, total, av
   // Center the text in the column
   const totalX = col3X + Math.max(0, (colWidth - totalTextWidth - 30) / 2);
   ctx.fillText(totalText, totalX, statsY + 80);
-  ctx.fillStyle = "#58a6ff";
+  ctx.fillStyle = cardColors.accent;
   ctx.font = "bold 28px 'Segoe UI', Arial, sans-serif";
   ctx.fillText("📈", totalX + totalTextWidth + 10, statsY + 80);
 
   // Decorative divider lines
-  ctx.strokeStyle = "#30363d";
+  ctx.strokeStyle = cardColors.border;
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(col2X - 30, statsY + 20);
