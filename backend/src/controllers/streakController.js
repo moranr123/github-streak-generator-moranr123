@@ -1,22 +1,20 @@
 // /src/controllers/streakController.js
 import { fetchGitHubData } from "../services/githubService.js";
 import { calculateStreaks } from "../utils/streakCalculator.js";
-import redisClient from "../utils/redisClient.js";
 import { generateStreakCard } from "../utils/streakCard.js";
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
   const { username } = req.params;
   try {
-    const cached = await redisClient.get(username);
-    if (cached) return res.json(JSON.parse(cached));
-
     const contributions = await fetchGitHubData(username);
     const { current, longest } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
 
+    // Debug logging
+    console.log(`Streak calculation for ${username}: current=${current}, longest=${longest}, total=${total}, days=${contributions.length}`);
+
     const result = { username, current, longest, total };
-    await redisClient.setEx(username, 24 * 60 * 60, JSON.stringify(result));
 
     res.json(result);
   } catch (err) {
