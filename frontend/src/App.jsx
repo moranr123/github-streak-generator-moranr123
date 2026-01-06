@@ -103,7 +103,8 @@ function App() {
       alert('Please generate a card first')
       return
     }
-    copyToClipboard(cardUrl)
+    const markdownLink = `![GitHub Streak Card](${cardUrl})`
+    copyToClipboard(markdownLink)
   }
 
   return (
@@ -180,14 +181,22 @@ function App() {
                         Copy HTML Code
                       </button>
                       <button onClick={copyUrl} className="copy-button">
-                        Copy URL
+                        Copy Markdown Link
                       </button>
                     </div>
                   )}
                 </>
               ) : (
                 <div className="placeholder">
-                  <p>Enter a username and click "Generate Card" to see your streak card</p>
+                  <div className="preview-container">
+                    <img 
+                      src="http://localhost:5000/api/streak/card/octocat?theme=58a6ff" 
+                      alt="Preview Card" 
+                      className="preview-image"
+                    />
+                    <p className="preview-note">This is just a preview</p>
+                    <p className="preview-instruction">Enter your GitHub username above to see your card</p>
+                  </div>
                 </div>
               )}
             </div>
