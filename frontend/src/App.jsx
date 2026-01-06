@@ -54,9 +54,10 @@ function App() {
   const handleThemeChange = (e) => {
     const newTheme = e.target.value
     setTheme(newTheme)
-    // Regenerate card URL if username exists
-    if (username.trim() && cardUrl && newTheme) {
-      setCardUrl(generateCardUrl(username, newTheme))
+    // Regenerate card URL if username exists (card should update immediately)
+    if (username.trim()) {
+      const url = generateCardUrl(username, newTheme)
+      setCardUrl(url)
     }
   }
 
