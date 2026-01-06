@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
+import fireIcon from './assets/fire.png'
 
 function App() {
   const [username, setUsername] = useState('')
@@ -559,7 +560,7 @@ function App() {
       <div className="container">
         <header>
           <div className="header-title">
-            <span className="fire-logo">🔥</span>
+            <img src={fireIcon} alt="Fire" className="fire-logo" />
             <h1>Github Streak Generator</h1>
           </div>
         </header>
