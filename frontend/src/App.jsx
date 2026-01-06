@@ -280,6 +280,9 @@ function App() {
     let newWidth = parseInt(value)
     let error = ''
     
+    // Get current width value from state (as number)
+    const currentWidth = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)
+    
     // Validate input
     if (value === '' || isNaN(newWidth) || newWidth < 1) {
       error = 'Please enter a valid width'
@@ -295,8 +298,8 @@ function App() {
     setWidthError(error)
     setCardWidth(newWidth)
     
-    // Regenerate card URL if username exists and no error
-    if (username.trim() && !error) {
+    // Only regenerate card URL if username exists, no error, and value actually changed
+    if (username.trim() && !error && newWidth !== currentWidth) {
       setImageLoading(true)
       setImageError(false)
       setError('')
@@ -335,6 +338,9 @@ function App() {
     let newHeight = parseInt(value)
     let error = ''
     
+    // Get current height value from state (as number)
+    const currentHeight = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 400)
+    
     // Validate input
     if (value === '' || isNaN(newHeight) || newHeight < 1) {
       error = 'Please enter a valid height'
@@ -350,8 +356,8 @@ function App() {
     setHeightError(error)
     setCardHeight(newHeight)
     
-    // Regenerate card URL if username exists and no error
-    if (username.trim() && !error) {
+    // Only regenerate card URL if username exists, no error, and value actually changed
+    if (username.trim() && !error && newHeight !== currentHeight) {
       setImageLoading(true)
       setImageError(false)
       setError('')
