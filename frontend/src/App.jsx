@@ -6,15 +6,29 @@ function App() {
   const [cardUrl, setCardUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [theme, setTheme] = useState('58a6ff')
+  const [theme, setTheme] = useState('')
+  
+  const themes = [
+    { value: '58a6ff', label: 'Blue' },
+    { value: '7c3aed', label: 'Purple' },
+    { value: '10b981', label: 'Green' },
+    { value: 'f59e0b', label: 'Amber' },
+    { value: 'ef4444', label: 'Red' },
+    { value: '06b6d4', label: 'Cyan' },
+    { value: 'ec4899', label: 'Pink' },
+    { value: '8b5cf6', label: 'Violet' }
+  ]
 
   const API_BASE = 'http://localhost:5000/api/streak'
 
   const generateCardUrl = (user, themeColor) => {
     const params = new URLSearchParams()
-    if (themeColor) params.append('theme', themeColor)
+    if (themeColor && themeColor.trim()) {
+      params.append('theme', themeColor)
+    }
     
-    return `${API_BASE}/card/${user}?${params.toString()}`
+    const queryString = params.toString()
+    return queryString ? `${API_BASE}/card/${user}?${queryString}` : `${API_BASE}/card/${user}`
   }
 
   const handleGenerate = async () => {
@@ -133,12 +147,19 @@ function App() {
             <div className="color-customization">
               <div className="color-item">
                 <label htmlFor="theme">Theme</label>
-                <input
+                <select
                   id="theme"
-                  type="color"
-                  value={`#${theme}`}
-                  onChange={(e) => handleThemeChange(e.target.value)}
-                />
+                  value={theme}
+                  onChange={handleThemeChange}
+                  className="theme-select"
+                >
+                  <option value="">Select a theme</option>
+                  {themes.map((themeOption) => (
+                    <option key={themeOption.value} value={themeOption.value}>
+                      {themeOption.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
