@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 import fireIcon from './assets/fire.png'
 
@@ -10,6 +10,9 @@ function App() {
   const [error, setError] = useState('')
   const [imageError, setImageError] = useState(false)
   const [theme, setTheme] = useState('ffffff')
+  
+  // Animation state
+  const [cardLoaded, setCardLoaded] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   
   // Dark mode state
@@ -31,6 +34,7 @@ function App() {
   const [exportFormat, setExportFormat] = useState('png')
   
   const themes = [
+    { value: 'ffffff', label: 'Default' },
     { value: '58a6ff', label: 'Blue' },
     { value: '7c3aed', label: 'Purple' },
     { value: '10b981', label: 'Green' },
@@ -38,8 +42,7 @@ function App() {
     { value: 'ef4444', label: 'Red' },
     { value: '06b6d4', label: 'Cyan' },
     { value: 'ec4899', label: 'Pink' },
-    { value: '8b5cf6', label: 'Violet' },
-    { value: 'ffffff', label: 'White' }
+    { value: '8b5cf6', label: 'Violet' }
   ]
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
@@ -134,8 +137,10 @@ function App() {
 
   const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardWidthOption, cardHeightOption) => {
     const params = new URLSearchParams()
-    if (themeColor && themeColor.trim()) {
-      params.append('theme', themeColor)
+    // Use theme
+    const colorToUse = themeColor ? themeColor.replace('#', '') : ''
+    if (colorToUse && colorToUse.trim()) {
+      params.append('theme', colorToUse)
     }
     if (fontSizeOption && fontSizeOption !== 'normal') {
       params.append('fontSize', fontSizeOption)
@@ -188,6 +193,7 @@ function App() {
     setImageLoading(true)
     setError('')
     setImageError(false)
+    setCardLoaded(false) // Reset animation state
     
     try {
       const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardWidth, cardHeight)
@@ -206,6 +212,7 @@ function App() {
   const handleThemeChange = (e) => {
     const newTheme = e.target.value
     setTheme(newTheme)
+    setUseCustomColors(false) // Disable custom colors when selecting a theme
     // Regenerate card URL if username exists (card should update immediately)
     if (username.trim()) {
       setImageLoading(true)
@@ -399,6 +406,7 @@ function App() {
     setImageLoading(false)
     setImageError(false)
     setError('') // Clear any previous errors on successful load
+    setCardLoaded(true) // Trigger animation
   }
 
   const handleImageError = async (e) => {
@@ -487,9 +495,39 @@ function App() {
           }
           img.src = imgUrl
         })
-      } else if (exportFormat === 'png') {
-        extension = 'png'
-        mimeType = 'image/png'
+      } else if (exportFormat === 'svg') {
+        // Convert PNG to SVG by embedding as base64
+        const canvas = document.createElement('canvas')
+        const img = new Image()
+        const imgUrl = URL.createObjectURL(blob)
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            canvas.width = img.width
+            canvas.height = img.height
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0)
+            
+            // Convert canvas to base64
+            const base64 = canvas.toDataURL('image/png')
+            
+            // Create SVG with embedded image
+            const svgContent = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${img.width}" height="${img.height}">
+              <image width="${img.width}" height="${img.height}" xlink:href="${base64}"/>
+            </svg>`
+            
+            finalBlob = new Blob([svgContent], { type: 'image/svg+xml' })
+            extension = 'svg'
+            mimeType = 'image/svg+xml'
+            URL.revokeObjectURL(imgUrl)
+            resolve()
+          }
+          img.onerror = () => {
+            URL.revokeObjectURL(imgUrl)
+            reject(new Error('Image load failed'))
+          }
+          img.src = imgUrl
+        })
       }
       
       const url = window.URL.createObjectURL(finalBlob)
@@ -580,25 +618,25 @@ function App() {
                       />
               </div>
 
-              <div className="input-group">
-                <label htmlFor="theme">Theme</label>
-                <select
-                  id="theme"
-                  value={theme}
-                  onChange={handleThemeChange}
-                  className="theme-select"
-                >
-                  {themes.map((themeOption) => (
-                    <option key={themeOption.value} value={themeOption.value}>
-                      {themeOption.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <div className="customization-section">
                 <h3 className="customization-title">Card Customization</h3>
                 
+                <div className="input-group">
+                  <label htmlFor="theme">Theme</label>
+                  <select
+                    id="theme"
+                    value={theme}
+                    onChange={handleThemeChange}
+                    className="theme-select"
+                  >
+                    {themes.map((themeOption) => (
+                      <option key={themeOption.value} value={themeOption.value}>
+                        {themeOption.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 <div className="input-group toggle-group">
                   <label htmlFor="hideAvatar" className="toggle-label">Hide Profile Image</label>
                   <button 
@@ -691,6 +729,7 @@ function App() {
                   >
                     <option value="png">PNG</option>
                     <option value="webp">WebP</option>
+                    <option value="svg">SVG</option>
                   </select>
                 </div>
               </div>
@@ -726,6 +765,7 @@ function App() {
                         key={cardUrl} 
                         src={cardUrl} 
                         alt="GitHub Streak Card"
+                        className={`card-image ${cardLoaded ? 'fade-in' : ''}`}
                         style={{ display: imageLoading ? 'none' : 'block' }}
                         onLoad={handleImageLoad}
                         onError={handleImageError}

@@ -368,6 +368,100 @@ header p {
   border-radius: 4px;
 }
 
+.card-image {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.card-image.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Custom Color Picker */
+.color-picker-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.custom-color-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.color-picker {
+  width: 60px;
+  height: 40px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-picker::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
+
+.color-text-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  font-size: 0.95rem;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-family: 'Courier New', monospace;
+  transition: border-color 0.2s, background-color 0.3s ease, color 0.3s ease;
+}
+
+.color-text-input:focus {
+  outline: none;
+  border-color: var(--text-primary);
+}
+
+.theme-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Custom Background and Text Color */
+.custom-colors-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.color-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.color-label {
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  font-weight: 400;
+}
+
+.color-input-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .image-loading {
   display: flex;
   flex-direction: column;

@@ -71,7 +71,24 @@ export const getStreakCard = async (req, res) => {
 
     // Extract theme parameter from query string and apply to multiple colors
     const colors = {};
-    if (req.query.theme) {
+    
+    // Check if custom background and text colors are provided
+    if (req.query.bgColor && req.query.textColor) {
+      const bgHex = req.query.bgColor.replace('#', '');
+      const textHex = req.query.textColor.replace('#', '');
+      
+      colors.background = `#${bgHex}`;
+      colors.backgroundGradient = `#${bgHex}`;
+      colors.text = `#${textHex}`;
+      colors.dateText = `#${textHex}`;
+      colors.currentStreak = `#${textHex}`;
+      colors.longestStreak = `#${textHex}`;
+      colors.totalCommits = `#${textHex}`;
+      colors.divider = `#${textHex}`;
+      colors.border = `#${textHex}`;
+      colors.avatarBorder = `#${textHex}`;
+      colors.accent = `#${textHex}`;
+    } else if (req.query.theme) {
       const themeHex = req.query.theme.replace('#', '');
       const themeColor = `#${themeHex}`;
       
