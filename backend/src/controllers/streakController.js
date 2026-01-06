@@ -125,11 +125,11 @@ export const getStreakCard = async (req, res) => {
       }
     }
 
-    // Extract fontSize, hideAvatar, cardSize, and cardLayout parameters
+    // Extract fontSize, hideAvatar, cardWidth, and cardHeight parameters
     const fontSize = req.query.fontSize || 'normal';
     const hideAvatar = req.query.hideAvatar === 'true';
-    const cardSize = req.query.cardSize || 'normal';
-    const cardLayout = req.query.cardLayout || 'default';
+    const cardWidth = parseInt(req.query.cardWidth) || 800;
+    const cardHeight = parseInt(req.query.cardHeight) || 400;
 
     const buffer = await generateStreakCard({ 
       username, 
@@ -140,8 +140,8 @@ export const getStreakCard = async (req, res) => {
       colors,
       fontSize,
       hideAvatar,
-      cardSize,
-      cardLayout,
+      cardWidth,
+      cardHeight,
       currentRange,
       longestRange,
       firstContribution,

@@ -21,8 +21,10 @@ function App() {
   // Card customization
   const [fontSize, setFontSize] = useState('normal')
   const [hideAvatar, setHideAvatar] = useState(false)
-  const [cardSize, setCardSize] = useState('normal')
-  const [cardLayout, setCardLayout] = useState('default')
+  const [cardWidth, setCardWidth] = useState(800)
+  const [cardHeight, setCardHeight] = useState(400)
+  const [widthError, setWidthError] = useState('')
+  const [heightError, setHeightError] = useState('')
   
   // Export format
   const [exportFormat, setExportFormat] = useState('png')
@@ -35,7 +37,8 @@ function App() {
     { value: 'ef4444', label: 'Red' },
     { value: '06b6d4', label: 'Cyan' },
     { value: 'ec4899', label: 'Pink' },
-    { value: '8b5cf6', label: 'Violet' }
+    { value: '8b5cf6', label: 'Violet' },
+    { value: 'ffffff', label: 'White' }
   ]
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
@@ -46,20 +49,15 @@ function App() {
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
 
-  // Load settings from localStorage on mount (after URL params)
+  // Clear form on page load/refresh
   useEffect(() => {
-    const savedTheme = localStorage.getItem('cardTheme')
-    const savedFontSize = localStorage.getItem('cardFontSize')
-    const savedHideAvatar = localStorage.getItem('cardHideAvatar')
-    const savedCardSize = localStorage.getItem('cardSize')
-    const savedCardLayout = localStorage.getItem('cardLayout')
-    
-    // Only load if not already set by URL params
-    if (!theme && savedTheme) setTheme(savedTheme)
-    if (fontSize === 'normal' && savedFontSize) setFontSize(savedFontSize)
-    if (!hideAvatar && savedHideAvatar === 'true') setHideAvatar(true)
-    if (cardSize === 'normal' && savedCardSize) setCardSize(savedCardSize)
-    if (cardLayout === 'default' && savedCardLayout) setCardLayout(savedCardLayout)
+    // Clear URL parameters on mount
+    window.history.replaceState({}, '', window.location.pathname)
+    // Clear card URL to show preview
+    setCardUrl('')
+    setError('')
+    setImageError(false)
+    setImageLoading(false)
   }, [])
 
   // Save settings to localStorage when they change
@@ -77,30 +75,19 @@ function App() {
   }, [hideAvatar])
 
   useEffect(() => {
-    localStorage.setItem('cardSize', cardSize)
-  }, [cardSize])
+    // Only save valid numbers to localStorage
+    if (typeof cardWidth === 'number') {
+      localStorage.setItem('cardWidth', cardWidth.toString())
+    }
+  }, [cardWidth])
 
   useEffect(() => {
-    localStorage.setItem('cardLayout', cardLayout)
-  }, [cardLayout])
+    // Only save valid numbers to localStorage
+    if (typeof cardHeight === 'number') {
+      localStorage.setItem('cardHeight', cardHeight.toString())
+    }
+  }, [cardHeight])
   
-  // Load from URL parameters on mount
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const urlUsername = params.get('username')
-    const urlTheme = params.get('theme')
-    const urlFontSize = params.get('fontSize')
-    const urlHideAvatar = params.get('hideAvatar')
-    const urlCardSize = params.get('cardSize')
-    const urlCardLayout = params.get('cardLayout')
-    
-    if (urlUsername) setUsername(urlUsername)
-    if (urlTheme) setTheme(urlTheme)
-    if (urlFontSize) setFontSize(urlFontSize)
-    if (urlHideAvatar === 'true') setHideAvatar(true)
-    if (urlCardSize) setCardSize(urlCardSize)
-    if (urlCardLayout) setCardLayout(urlCardLayout)
-  }, [])
   
   // Update URL when settings change
   useEffect(() => {
@@ -109,15 +96,22 @@ function App() {
     if (theme) params.set('theme', theme)
     if (fontSize !== 'normal') params.set('fontSize', fontSize)
     if (hideAvatar) params.set('hideAvatar', 'true')
-    if (cardSize !== 'normal') params.set('cardSize', cardSize)
-    if (cardLayout !== 'default') params.set('cardLayout', cardLayout)
+    // Only add to URL if they are valid numbers and not default values
+    const widthValue = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)
+    const heightValue = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 400)
+    if (widthValue !== 800 && !isNaN(widthValue)) {
+      params.set('cardWidth', widthValue.toString())
+    }
+    if (heightValue !== 400 && !isNaN(heightValue)) {
+      params.set('cardHeight', heightValue.toString())
+    }
     
     const newUrl = params.toString() 
       ? `${window.location.pathname}?${params.toString()}`
       : window.location.pathname
     
     window.history.replaceState({}, '', newUrl)
-  }, [username, theme, fontSize, hideAvatar, cardSize, cardLayout])
+  }, [username, theme, fontSize, hideAvatar, cardWidth, cardHeight])
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -137,7 +131,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [error])
 
-  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardSizeOption, cardLayoutOption) => {
+  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardWidthOption, cardHeightOption) => {
     const params = new URLSearchParams()
     if (themeColor && themeColor.trim()) {
       params.append('theme', themeColor)
@@ -148,11 +142,14 @@ function App() {
     if (hideAvatarOption) {
       params.append('hideAvatar', 'true')
     }
-    if (cardSizeOption && cardSizeOption !== 'normal') {
-      params.append('cardSize', cardSizeOption)
+    // Convert to number if string, then check if not default
+    const widthValue = typeof cardWidthOption === 'number' ? cardWidthOption : (typeof cardWidthOption === 'string' ? parseInt(cardWidthOption) : 800)
+    const heightValue = typeof cardHeightOption === 'number' ? cardHeightOption : (typeof cardHeightOption === 'string' ? parseInt(cardHeightOption) : 400)
+    if (widthValue && !isNaN(widthValue) && widthValue !== 800) {
+      params.append('cardWidth', widthValue.toString())
     }
-    if (cardLayoutOption && cardLayoutOption !== 'default') {
-      params.append('cardLayout', cardLayoutOption)
+    if (heightValue && !isNaN(heightValue) && heightValue !== 400) {
+      params.append('cardHeight', heightValue.toString())
     }
     
     const queryString = params.toString()
@@ -192,7 +189,7 @@ function App() {
     setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardSize, cardLayout)
+      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardWidth, cardHeight)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     } catch (err) {
@@ -213,7 +210,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar, cardSize, cardLayout)
+      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar, cardWidth, cardHeight)
       // Add timestamp to force browser to reload the image
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
@@ -228,7 +225,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar, cardSize, cardLayout)
+      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar, cardWidth, cardHeight)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -242,21 +239,117 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar, cardSize, cardLayout)
+      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar, cardWidth, cardHeight)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
   }
 
-  const handleCardSizeChange = (e) => {
-    const newCardSize = e.target.value
-    setCardSize(newCardSize)
-    // Regenerate card URL if username exists
-    if (username.trim()) {
+  const handleCardWidthChange = (e) => {
+    const value = e.target.value
+    // Clear error when user starts typing
+    setWidthError('')
+    // Allow any input while typing - store as string to allow full editing
+    setCardWidth(value)
+    
+    // Real-time validation while typing (optional - can be removed if too aggressive)
+    if (value !== '' && value !== '-') {
+      const numValue = parseInt(value)
+      if (!isNaN(numValue)) {
+        if (numValue < 400) {
+          setWidthError('Width must be at least 400px')
+        } else if (numValue > 2000) {
+          setWidthError('Width must be at most 2000px')
+        } else {
+          setWidthError('')
+        }
+      }
+    }
+  }
+
+  const handleCardWidthBlur = (e) => {
+    const value = e.target.value.trim()
+    let newWidth = parseInt(value)
+    let error = ''
+    
+    // Validate input
+    if (value === '' || isNaN(newWidth) || newWidth < 1) {
+      error = 'Please enter a valid width'
+      newWidth = 800 // Reset to default
+    } else if (newWidth < 400) {
+      error = 'Width must be at least 400px'
+      newWidth = 400 // Clamp to minimum
+    } else if (newWidth > 2000) {
+      error = 'Width must be at most 2000px'
+      newWidth = 2000 // Clamp to maximum
+    }
+    
+    setWidthError(error)
+    setCardWidth(newWidth)
+    
+    // Regenerate card URL if username exists and no error
+    if (username.trim() && !error) {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, newCardSize, cardLayout)
+      // Get current height value
+      const currentHeight = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) || 400 : 400)
+      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, newWidth, currentHeight)
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+      setCardUrl(url)
+    }
+  }
+
+  const handleCardHeightChange = (e) => {
+    const value = e.target.value
+    // Clear error when user starts typing
+    setHeightError('')
+    // Allow any input while typing - store as string to allow full editing
+    setCardHeight(value)
+    
+    // Real-time validation while typing (optional - can be removed if too aggressive)
+    if (value !== '' && value !== '-') {
+      const numValue = parseInt(value)
+      if (!isNaN(numValue)) {
+        if (numValue < 200) {
+          setHeightError('Height must be at least 200px')
+        } else if (numValue > 1200) {
+          setHeightError('Height must be at most 1200px')
+        } else {
+          setHeightError('')
+        }
+      }
+    }
+  }
+
+  const handleCardHeightBlur = (e) => {
+    const value = e.target.value.trim()
+    let newHeight = parseInt(value)
+    let error = ''
+    
+    // Validate input
+    if (value === '' || isNaN(newHeight) || newHeight < 1) {
+      error = 'Please enter a valid height'
+      newHeight = 400 // Reset to default
+    } else if (newHeight < 200) {
+      error = 'Height must be at least 200px'
+      newHeight = 200 // Clamp to minimum
+    } else if (newHeight > 1200) {
+      error = 'Height must be at most 1200px'
+      newHeight = 1200 // Clamp to maximum
+    }
+    
+    setHeightError(error)
+    setCardHeight(newHeight)
+    
+    // Regenerate card URL if username exists and no error
+    if (username.trim() && !error) {
+      setImageLoading(true)
+      setImageError(false)
+      setError('')
+      // Get current width value
+      const currentWidth = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) || 800 : 800)
+      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, currentWidth, newHeight)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -268,8 +361,10 @@ function App() {
     if (theme) params.set('theme', theme)
     if (fontSize !== 'normal') params.set('fontSize', fontSize)
     if (hideAvatar) params.set('hideAvatar', 'true')
-    if (cardSize !== 'normal') params.set('cardSize', cardSize)
-    if (cardLayout !== 'default') params.set('cardLayout', cardLayout)
+    const widthValue = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)
+    const heightValue = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 400)
+    if (widthValue !== 800 && !isNaN(widthValue)) params.set('cardWidth', widthValue.toString())
+    if (heightValue !== 400 && !isNaN(heightValue)) params.set('cardHeight', heightValue.toString())
     
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`
   }
@@ -535,31 +630,55 @@ function App() {
                 </div>
 
                 <div className="input-group">
-                  <label htmlFor="cardSize">Card Size</label>
-                  <select
-                    id="cardSize"
-                    value={cardSize}
-                    onChange={handleCardSizeChange}
-                    className="theme-select"
-                  >
-                    <option value="compact">Compact</option>
-                    <option value="normal">Normal</option>
-                    <option value="large">Large</option>
-                  </select>
+                  <label htmlFor="cardWidth">Card Width (px)</label>
+                  <input
+                    id="cardWidth"
+                    type="number"
+                    min="400"
+                    max="2000"
+                    value={cardWidth}
+                    onChange={handleCardWidthChange}
+                    onBlur={handleCardWidthBlur}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.target.blur()
+                      }
+                    }}
+                    className={`theme-select ${widthError ? 'input-error' : ''}`}
+                    aria-invalid={!!widthError}
+                    aria-describedby={widthError ? 'width-error' : undefined}
+                  />
+                  {widthError && (
+                    <span id="width-error" className="field-error" role="alert">
+                      {widthError}
+                    </span>
+                  )}
                 </div>
 
                 <div className="input-group">
-                  <label htmlFor="cardLayout">Card Layout</label>
-                  <select
-                    id="cardLayout"
-                    value={cardLayout}
-                    onChange={handleCardLayoutChange}
-                    className="theme-select"
-                  >
-                    <option value="default">Default</option>
-                    <option value="minimal">Minimal</option>
-                    <option value="detailed">Detailed</option>
-                  </select>
+                  <label htmlFor="cardHeight">Card Height (px)</label>
+                  <input
+                    id="cardHeight"
+                    type="number"
+                    min="200"
+                    max="1200"
+                    value={cardHeight}
+                    onChange={handleCardHeightChange}
+                    onBlur={handleCardHeightBlur}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.target.blur()
+                      }
+                    }}
+                    className={`theme-select ${heightError ? 'input-error' : ''}`}
+                    aria-invalid={!!heightError}
+                    aria-describedby={heightError ? 'height-error' : undefined}
+                  />
+                  {heightError && (
+                    <span id="height-error" className="field-error" role="alert">
+                      {heightError}
+                    </span>
+                  )}
                 </div>
 
                 <div className="input-group">
@@ -661,9 +780,13 @@ function App() {
                 <div className="placeholder">
                   <div className="preview-container">
                     <img 
-                      src={`${API_BASE}/card/octocat?theme=58a6ff`}
+                      src={`${API_BASE}/card/morar123?theme=58a6ff`}
                       alt="Preview Card" 
                       className="preview-image"
+                      onError={(e) => {
+                        // Hide image if it fails to load
+                        e.target.style.display = 'none'
+                      }}
                     />
                     <p className="preview-note">This is just a preview</p>
                     <p className="preview-instruction">Enter your GitHub username above to see your card</p>
