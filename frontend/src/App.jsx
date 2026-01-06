@@ -78,7 +78,11 @@ function App() {
       <div className="container">
         <header>
           <div className="header-title">
-            <span className="github-label">GitHub</span>
+            <img 
+              src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" 
+              alt="GitHub" 
+              className="github-logo"
+            />
             <h1>Streak Generator</h1>
           </div>
         </header>

@@ -44,11 +44,10 @@ header {
   gap: 12px;
 }
 
-.github-label {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: #666;
-  letter-spacing: 0.5px;
+.github-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
 }
 
 header h1 {
@@ -266,8 +265,9 @@ header p {
     gap: 4px;
   }
 
-  .github-label {
-    font-size: 1rem;
+  .github-logo {
+    width: 28px;
+    height: 28px;
   }
 
   header h1 {
