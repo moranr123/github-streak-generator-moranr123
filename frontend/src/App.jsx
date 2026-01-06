@@ -77,7 +77,10 @@ function App() {
     <div className="app">
       <div className="container">
         <header>
-          <h1>GitHub Streak Generator</h1>
+          <div className="header-title">
+            <span className="github-label">GitHub</span>
+            <h1>Streak Generator</h1>
+          </div>
         </header>
 
         <div className="main-content">
