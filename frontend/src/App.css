@@ -151,24 +151,27 @@ header p {
 
 .color-item {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
 }
 
 .color-item label {
   font-size: 0.8125rem;
   color: #666;
   font-weight: 400;
+  min-width: 140px;
 }
 
 .color-item input[type="color"] {
-  width: 100%;
+  width: 60px;
   height: 36px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
   cursor: pointer;
   transition: border-color 0.2s;
   background: white;
+  flex-shrink: 0;
 }
 
 .color-item input[type="color"]:hover {
