@@ -103,7 +103,20 @@ export const getStreakCard = async (req, res) => {
       }
     }
 
-    const buffer = await generateStreakCard({ username, current, longest, total, avatarUrl, colors });
+    // Extract fontSize and layout parameters
+    const fontSize = req.query.fontSize || 'normal';
+    const layout = req.query.layout || 'horizontal';
+
+    const buffer = await generateStreakCard({ 
+      username, 
+      current, 
+      longest, 
+      total, 
+      avatarUrl, 
+      colors,
+      fontSize,
+      layout
+    });
 
     res.setHeader("Content-Type", "image/png");
     res.send(buffer);

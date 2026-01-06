@@ -11,6 +11,19 @@ function App() {
   const [theme, setTheme] = useState('')
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    if (saved !== null) return JSON.parse(saved)
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+  
+  // Card customization
+  const [fontSize, setFontSize] = useState('normal')
+  
+  // Export format
+  const [exportFormat, setExportFormat] = useState('png')
+  
   const themes = [
     { value: '58a6ff', label: 'Blue' },
     { value: '7c3aed', label: 'Purple' },
@@ -23,11 +36,38 @@ function App() {
   ]
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
+  
+  // Apply dark mode to document
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
+    localStorage.setItem('darkMode', JSON.stringify(darkMode))
+  }, [darkMode])
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      // Ctrl/Cmd + K to focus username input
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault()
+        document.getElementById('username')?.focus()
+      }
+      // Escape to clear error
+      if (e.key === 'Escape' && error) {
+        setError('')
+      }
+    }
+    
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [error])
 
-  const generateCardUrl = (user, themeColor) => {
+  const generateCardUrl = (user, themeColor, fontSizeOption) => {
     const params = new URLSearchParams()
     if (themeColor && themeColor.trim()) {
       params.append('theme', themeColor)
+    }
+    if (fontSizeOption && fontSizeOption !== 'normal') {
+      params.append('fontSize', fontSizeOption)
     }
     
     const queryString = params.toString()
@@ -67,7 +107,7 @@ function App() {
     setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username.trim(), theme)
+      const baseUrl = generateCardUrl(username.trim(), theme, fontSize)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     } catch (err) {
@@ -88,8 +128,22 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, newTheme)
+      const baseUrl = generateCardUrl(username, newTheme, fontSize)
       // Add timestamp to force browser to reload the image
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+      setCardUrl(url)
+    }
+  }
+
+  const handleFontSizeChange = (e) => {
+    const newFontSize = e.target.value
+    setFontSize(newFontSize)
+    // Regenerate card URL if username exists
+    if (username.trim()) {
+      setImageLoading(true)
+      setImageError(false)
+      setError('')
+      const baseUrl = generateCardUrl(username, theme, newFontSize)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -151,15 +205,56 @@ function App() {
     try {
       const response = await fetch(cardUrl)
       const blob = await response.blob()
-      const url = window.URL.createObjectURL(blob)
+      
+      let finalBlob = blob
+      let extension = 'png'
+      let mimeType = 'image/png'
+      
+      // Convert to WebP if selected
+      if (exportFormat === 'webp') {
+        const canvas = document.createElement('canvas')
+        const img = new Image()
+        const imgUrl = URL.createObjectURL(blob)
+        
+        await new Promise((resolve, reject) => {
+          img.onload = () => {
+            canvas.width = img.width
+            canvas.height = img.height
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(img, 0, 0)
+            canvas.toBlob((webpBlob) => {
+              if (webpBlob) {
+                finalBlob = webpBlob
+                extension = 'webp'
+                mimeType = 'image/webp'
+                URL.revokeObjectURL(imgUrl)
+                resolve()
+              } else {
+                URL.revokeObjectURL(imgUrl)
+                reject(new Error('WebP conversion failed'))
+              }
+            }, 'image/webp', 0.9)
+          }
+          img.onerror = () => {
+            URL.revokeObjectURL(imgUrl)
+            reject(new Error('Image load failed'))
+          }
+          img.src = imgUrl
+        })
+      } else if (exportFormat === 'png') {
+        extension = 'png'
+        mimeType = 'image/png'
+      }
+      
+      const url = window.URL.createObjectURL(finalBlob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `github-streak-${username || 'card'}.png`
+      a.download = `github-streak-${username || 'card'}.${extension}`
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
       window.URL.revokeObjectURL(url)
-      showToast('Card downloaded successfully!', 'success')
+      showToast(`Card downloaded as ${exportFormat.toUpperCase()}!`, 'success')
     } catch (err) {
       // Don't expose internal error details
       showToast('Unable to download card. Please try again.', 'error')
@@ -186,6 +281,36 @@ function App() {
 
   return (
     <div className="app">
+      <button 
+        className={`dark-mode-toggle ${darkMode ? 'active' : ''}`}
+        onClick={() => setDarkMode(!darkMode)}
+        aria-label="Toggle dark mode"
+        title="Toggle dark mode"
+        role="switch"
+        aria-checked={darkMode}
+      >
+        <span className="toggle-track">
+          <span className="toggle-handle">
+            {darkMode ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="toggle-icon">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="toggle-icon">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+              </svg>
+            )}
+          </span>
+        </span>
+      </button>
       <div className="container">
         <header>
           <div className="header-title">
@@ -226,6 +351,37 @@ function App() {
                 </select>
               </div>
 
+              <div className="customization-section">
+                <h3 className="customization-title">Card Customization</h3>
+                
+                <div className="input-group">
+                  <label htmlFor="fontSize">Font Size</label>
+                  <select
+                    id="fontSize"
+                    value={fontSize}
+                    onChange={handleFontSizeChange}
+                    className="theme-select"
+                  >
+                    <option value="small">Small</option>
+                    <option value="normal">Normal</option>
+                    <option value="large">Large</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
+                  <label htmlFor="exportFormat">Export Format</label>
+                  <select
+                    id="exportFormat"
+                    value={exportFormat}
+                    onChange={(e) => setExportFormat(e.target.value)}
+                    className="theme-select"
+                  >
+                    <option value="png">PNG</option>
+                    <option value="webp">WebP</option>
+                  </select>
+                </div>
+              </div>
+
               {error && <div className="error">{error}</div>}
 
               <button onClick={handleGenerate} disabled={loading} className="submit-button">
@@ -259,7 +415,7 @@ function App() {
                         onError={handleImageError}
                       />
                     )}
-                  </div>
+      </div>
                   {!imageLoading && !imageError && (
                     <div className="action-buttons">
                       <button onClick={copyHtmlCode} className="copy-button">
@@ -269,8 +425,8 @@ function App() {
                         Copy Markdown Link
                       </button>
                       <button onClick={downloadCard} className="copy-button download-button">
-                        Download
-                      </button>
+                        Download ({exportFormat.toUpperCase()})
+        </button>
                     </div>
                   )}
                 </>
