@@ -6,31 +6,13 @@ function App() {
   const [cardUrl, setCardUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [colors, setColors] = useState({
-    bg: '0d1117',
-    bgGradient: '161b22',
-    border: '30363d',
-    text: 'f0f6fc',
-    accent: '58a6ff',
-    currentStreak: 'f0f6fc',
-    longestStreak: 'f0f6fc',
-    totalCommits: '7c3aed',
-    avatarBorder: '58a6ff'
-  })
+  const [theme, setTheme] = useState('58a6ff')
 
   const API_BASE = 'http://localhost:5000/api/streak'
 
-  const generateCardUrl = (user, colorParams) => {
+  const generateCardUrl = (user, themeColor) => {
     const params = new URLSearchParams()
-    if (colorParams.bg) params.append('bg', colorParams.bg)
-    if (colorParams.bgGradient) params.append('bgGradient', colorParams.bgGradient)
-    if (colorParams.border) params.append('border', colorParams.border)
-    if (colorParams.text) params.append('text', colorParams.text)
-    if (colorParams.accent) params.append('accent', colorParams.accent)
-    if (colorParams.currentStreak) params.append('currentStreak', colorParams.currentStreak)
-    if (colorParams.longestStreak) params.append('longestStreak', colorParams.longestStreak)
-    if (colorParams.totalCommits) params.append('totalCommits', colorParams.totalCommits)
-    if (colorParams.avatarBorder) params.append('avatarBorder', colorParams.avatarBorder)
+    if (themeColor) params.append('theme', themeColor)
     
     return `${API_BASE}/card/${user}?${params.toString()}`
   }
@@ -45,7 +27,7 @@ function App() {
     setError('')
     
     try {
-      const url = generateCardUrl(username, colors)
+      const url = generateCardUrl(username, theme)
       setCardUrl(url)
     } catch (err) {
       setError('Failed to generate card. Please try again.')
@@ -55,16 +37,13 @@ function App() {
     }
   }
 
-  const handleColorChange = (key, value) => {
-    const newColorValue = value.replace('#', '')
-    setColors(prev => {
-      const updated = { ...prev, [key]: newColorValue }
-      // Regenerate card URL if username exists
-      if (username.trim() && cardUrl) {
-        setCardUrl(generateCardUrl(username, updated))
-      }
-      return updated
-    })
+  const handleThemeChange = (value) => {
+    const newTheme = value.replace('#', '')
+    setTheme(newTheme)
+    // Regenerate card URL if username exists
+    if (username.trim() && cardUrl) {
+      setCardUrl(generateCardUrl(username, newTheme))
+    }
   }
 
   const copyToClipboard = async (text) => {
@@ -99,7 +78,6 @@ function App() {
       <div className="container">
         <header>
           <h1>GitHub Streak Generator</h1>
-          <p>Generate and customize your GitHub contribution streak card</p>
         </header>
 
         <div className="main-content">
@@ -146,80 +124,14 @@ function App() {
             {error && <div className="error">{error}</div>}
 
             <div className="color-customization">
-              <h3>Customize Colors</h3>
-              <div className="color-grid">
-                <div className="color-item">
-                  <label>Background</label>
-                  <input
-                    type="color"
-                    value={`#${colors.bg}`}
-                    onChange={(e) => handleColorChange('bg', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Background Gradient</label>
-                  <input
-                    type="color"
-                    value={`#${colors.bgGradient}`}
-                    onChange={(e) => handleColorChange('bgGradient', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Border</label>
-                  <input
-                    type="color"
-                    value={`#${colors.border}`}
-                    onChange={(e) => handleColorChange('border', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Text</label>
-                  <input
-                    type="color"
-                    value={`#${colors.text}`}
-                    onChange={(e) => handleColorChange('text', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Accent</label>
-                  <input
-                    type="color"
-                    value={`#${colors.accent}`}
-                    onChange={(e) => handleColorChange('accent', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Current Streak</label>
-                  <input
-                    type="color"
-                    value={`#${colors.currentStreak}`}
-                    onChange={(e) => handleColorChange('currentStreak', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Longest Streak</label>
-                  <input
-                    type="color"
-                    value={`#${colors.longestStreak}`}
-                    onChange={(e) => handleColorChange('longestStreak', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Total Commits</label>
-                  <input
-                    type="color"
-                    value={`#${colors.totalCommits}`}
-                    onChange={(e) => handleColorChange('totalCommits', e.target.value)}
-                  />
-                </div>
-                <div className="color-item">
-                  <label>Avatar Border</label>
-                  <input
-                    type="color"
-                    value={`#${colors.avatarBorder}`}
-                    onChange={(e) => handleColorChange('avatarBorder', e.target.value)}
-                  />
-                </div>
+              <div className="color-item">
+                <label htmlFor="theme">Theme</label>
+                <input
+                  id="theme"
+                  type="color"
+                  value={`#${theme}`}
+                  onChange={(e) => handleThemeChange(e.target.value)}
+                />
               </div>
             </div>
           </div>

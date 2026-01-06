@@ -37,17 +37,15 @@ export const getStreakCard = async (req, res) => {
     // Optional: fetch avatar from GitHub
     const avatarUrl = `https://github.com/${username}.png`;
 
-    // Extract color parameters from query string
+    // Extract theme parameter from query string and apply to multiple colors
     const colors = {};
-    if (req.query.bg) colors.background = `#${req.query.bg.replace('#', '')}`;
-    if (req.query.bgGradient) colors.backgroundGradient = `#${req.query.bgGradient.replace('#', '')}`;
-    if (req.query.border) colors.border = `#${req.query.border.replace('#', '')}`;
-    if (req.query.text) colors.text = `#${req.query.text.replace('#', '')}`;
-    if (req.query.accent) colors.accent = `#${req.query.accent.replace('#', '')}`;
-    if (req.query.currentStreak) colors.currentStreak = `#${req.query.currentStreak.replace('#', '')}`;
-    if (req.query.longestStreak) colors.longestStreak = `#${req.query.longestStreak.replace('#', '')}`;
-    if (req.query.totalCommits) colors.totalCommits = `#${req.query.totalCommits.replace('#', '')}`;
-    if (req.query.avatarBorder) colors.avatarBorder = `#${req.query.avatarBorder.replace('#', '')}`;
+    if (req.query.theme) {
+      const themeColor = `#${req.query.theme.replace('#', '')}`;
+      // Apply theme to accent colors
+      colors.accent = themeColor;
+      colors.avatarBorder = themeColor;
+      colors.totalCommits = themeColor;
+    }
 
     const buffer = await generateStreakCard({ username, current, longest, total, avatarUrl, colors });
 
