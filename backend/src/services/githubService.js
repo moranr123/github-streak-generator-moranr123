@@ -1,22 +1,42 @@
 import axios from "axios";
 
 export const fetchGitHubData = async (username) => {
-  // GitHub REST API v3 for contributions is limited, GraphQL is better
-  // Example: Fetch user events
-  const url = `https://api.github.com/users/${username}/events/public`;
+  const query = `
+    query {
+      user(login: "${username}") {
+        contributionsCollection {
+          contributionCalendar {
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
 
-  const { data } = await axios.get(url, {
-    headers: {
-      "User-Agent": "GitHub-Streak-App",
-      "Authorization": `token ${process.env.GITHUB_TOKEN}`, // optional
-    },
-  });
+  const { data } = await axios.post(
+    "https://api.github.com/graphql",
+    { query },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+      },
+    }
+  );
 
-  // Map data to daily contributions (simplified example)
-  const contributions = data.map((event) => ({
-    date: event.created_at,
-    count: 1, // for each event
-  }));
+  const weeks = data.data.user.contributionsCollection.contributionCalendar.weeks;
 
-  return contributions;
+  // Flatten weeks to daily list
+  const days = weeks.flatMap(week =>
+    week.contributionDays.map(day => ({
+      date: day.date,
+      count: day.contributionCount,
+    }))
+  );
+
+  return days;
 };
