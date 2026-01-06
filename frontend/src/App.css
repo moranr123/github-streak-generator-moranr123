@@ -446,14 +446,80 @@ header p {
 }
 
 .action-buttons {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
 }
 
-.copy-button {
+.link-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.link-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: color 0.3s ease;
+}
+
+.link-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.link-text {
   flex: 1;
+  font-size: 0.875rem;
+  font-family: 'Courier New', monospace;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  word-break: break-all;
+  overflow-wrap: break-word;
+}
+
+.copy-icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  flex-shrink: 0;
+  min-width: 32px;
+  height: 32px;
+}
+
+.copy-icon-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+}
+
+.copy-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.copy-button {
+  width: 100%;
   padding: 10px 20px;
   background: #2563eb;
   color: white;
@@ -475,8 +541,16 @@ header p {
 }
 
 .download-button {
+  width: 100%;
+  padding: 10px 20px;
   background: #10b981;
-  border-color: #10b981;
+  color: white;
+  border: 1px solid #10b981;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
 }
 
 .download-button:hover {
@@ -582,7 +656,7 @@ header p {
   }
 
   .action-buttons {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
   
   .card-stats {

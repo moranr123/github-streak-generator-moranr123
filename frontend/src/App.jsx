@@ -217,7 +217,7 @@ function App() {
     }
   }
 
-  const shareUrl = () => {
+  const getShareUrl = () => {
     const params = new URLSearchParams()
     if (username) params.set('username', username)
     if (theme) params.set('theme', theme)
@@ -225,8 +225,12 @@ function App() {
     if (hideAvatar) params.set('hideAvatar', 'true')
     if (cardSize !== 'normal') params.set('cardSize', cardSize)
     
-    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`
-    copyToClipboard(shareUrl)
+    return `${window.location.origin}${window.location.pathname}?${params.toString()}`
+  }
+
+  const shareUrl = () => {
+    const shareUrlText = getShareUrl()
+    copyToClipboard(shareUrlText)
   }
 
   const handleImageLoad = () => {
@@ -528,18 +532,45 @@ function App() {
       </div>
                   {!imageLoading && !imageError && (
                     <div className="action-buttons">
-                      <button onClick={copyHtmlCode} className="copy-button">
-                        Copy HTML Code
-                      </button>
-                      <button onClick={copyUrl} className="copy-button">
-                        Copy Markdown Link
-                      </button>
-                      <button onClick={shareUrl} className="copy-button">
-                        Share URL
-                      </button>
-                      <button onClick={downloadCard} className="copy-button download-button">
+                      <div className="link-section">
+                        <label className="link-label">HTML Code</label>
+                        <div className="link-item">
+                          <code className="link-text">{`<img src="${cardUrl}" alt="GitHub Streak Card" />`}</code>
+                          <button onClick={copyHtmlCode} className="copy-icon-button" title="Copy HTML Code">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="link-section">
+                        <label className="link-label">Markdown Link</label>
+                        <div className="link-item">
+                          <code className="link-text">{`![GitHub Streak Card](${cardUrl})`}</code>
+                          <button onClick={copyUrl} className="copy-icon-button" title="Copy Markdown Link">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="link-section">
+                        <label className="link-label">Share URL</label>
+                        <div className="link-item">
+                          <code className="link-text">{getShareUrl()}</code>
+                          <button onClick={shareUrl} className="copy-icon-button" title="Copy Share URL">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <button onClick={downloadCard} className="download-button">
                         Download ({exportFormat.toUpperCase()})
-        </button>
+                      </button>
                     </div>
                   )}
                 </>
