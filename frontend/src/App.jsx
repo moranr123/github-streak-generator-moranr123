@@ -111,57 +111,16 @@ function App() {
       <div className="container">
         <header>
           <div className="header-title">
-            <img 
-              src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" 
-              alt="GitHub" 
-              className="github-logo"
-            />
-            <h1>Streak Generator</h1>
+            <span className="fire-logo">🔥</span>
+            <h1>Github Streak Generator</h1>
           </div>
         </header>
 
         <div className="main-content">
-          <div className="card-section">
-            {cardUrl ? (
-              <>
-                <div className="card-preview">
-                  {imageLoading && (
-                    <div className="image-loading">
-                      <div className="loading-spinner"></div>
-                      <p>Loading card...</p>
-                    </div>
-                  )}
-                  <img 
-                    key={cardUrl} 
-                    src={cardUrl} 
-                    alt="GitHub Streak Card"
-                    style={{ display: imageLoading ? 'none' : 'block' }}
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                  />
-                </div>
-                {!imageLoading && (
-                  <div className="action-buttons">
-                    <button onClick={copyHtmlCode} className="copy-button">
-                      Copy HTML Code
-                    </button>
-                    <button onClick={copyUrl} className="copy-button">
-                      Copy URL
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="placeholder">
-                <p>Enter a username and click "Generate Card" to see your streak card</p>
-              </div>
-            )}
-          </div>
-
-          <div className="input-section">
-            <div className="input-group">
-              <label htmlFor="username">GitHub Username</label>
-              <div className="input-with-button">
+          <div className="card-and-theme">
+            <div className="left-section">
+              <div className="input-group">
+                <label htmlFor="username">Username</label>
                 <input
                   id="username"
                   type="text"
@@ -170,16 +129,9 @@ function App() {
                   onChange={(e) => setUsername(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
                 />
-                <button onClick={handleGenerate} disabled={loading}>
-                  {loading ? 'Generating...' : 'Generate Card'}
-                </button>
               </div>
-            </div>
 
-            {error && <div className="error">{error}</div>}
-
-            <div className="color-customization">
-              <div className="color-item">
+              <div className="input-group">
                 <label htmlFor="theme">Theme</label>
                 <select
                   id="theme"
@@ -195,6 +147,49 @@ function App() {
                   ))}
                 </select>
               </div>
+
+              {error && <div className="error">{error}</div>}
+
+              <button onClick={handleGenerate} disabled={loading} className="submit-button">
+                {loading ? 'Generating...' : 'Generate Card'}
+              </button>
+            </div>
+
+            <div className="card-section">
+              {cardUrl ? (
+                <>
+                  <div className="card-preview">
+                    {imageLoading && (
+                      <div className="image-loading">
+                        <div className="loading-spinner"></div>
+                        <p>Loading card...</p>
+                      </div>
+                    )}
+                    <img 
+                      key={cardUrl} 
+                      src={cardUrl} 
+                      alt="GitHub Streak Card"
+                      style={{ display: imageLoading ? 'none' : 'block' }}
+                      onLoad={handleImageLoad}
+                      onError={handleImageError}
+                    />
+                  </div>
+                  {!imageLoading && (
+                    <div className="action-buttons">
+                      <button onClick={copyHtmlCode} className="copy-button">
+                        Copy HTML Code
+                      </button>
+                      <button onClick={copyUrl} className="copy-button">
+                        Copy URL
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="placeholder">
+                  <p>Enter a username and click "Generate Card" to see your streak card</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -21,7 +22,7 @@ body {
 }
 
 .container {
-  width: 50%;
+  width: 60%;
   margin: 0 auto;
   background: white;
   border-radius: 8px;
@@ -44,10 +45,9 @@ header {
   gap: 12px;
 }
 
-.github-logo {
-  width: 32px;
-  height: 32px;
-  object-fit: contain;
+.fire-logo {
+  font-size: 2rem;
+  display: inline-block;
 }
 
 header h1 {
@@ -55,6 +55,7 @@ header h1 {
   margin: 0;
   font-weight: 600;
   letter-spacing: -0.5px;
+  font-family: 'Poppins', sans-serif;
 }
 
 header p {
@@ -66,8 +67,27 @@ header p {
 .main-content {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 32px;
   padding: 40px;
+}
+
+.card-and-theme {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.left-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 250px;
+}
+
+.theme-section {
+  display: flex;
+  align-items: center;
 }
 
 .input-section {
@@ -80,7 +100,7 @@ header p {
 .input-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .input-group label {
@@ -90,13 +110,8 @@ header p {
   letter-spacing: 0.2px;
 }
 
-.input-with-button {
-  display: flex;
-  gap: 8px;
-}
-
-.input-with-button input {
-  flex: 1;
+.input-group input {
+  width: 100%;
   padding: 10px 14px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
@@ -106,13 +121,14 @@ header p {
   color: #1a1a1a;
 }
 
-.input-with-button input:focus {
+.input-group input:focus {
   outline: none;
   border-color: #1a1a1a;
 }
 
-.input-with-button button {
-  padding: 10px 20px;
+.submit-button {
+  width: 100%;
+  padding: 12px 20px;
   background: #1a1a1a;
   color: white;
   border: none;
@@ -123,11 +139,11 @@ header p {
   transition: background-color 0.2s;
 }
 
-.input-with-button button:hover:not(:disabled) {
+.submit-button:hover:not(:disabled) {
   background: #333;
 }
 
-.input-with-button button:disabled {
+.submit-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -143,8 +159,17 @@ header p {
 
 .color-customization {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.color-customization label {
+  font-size: 0.8125rem;
+  color: #666;
+  font-weight: 400;
+  min-width: 60px;
+  margin-right: 0;
 }
 
 .color-item {
@@ -162,15 +187,15 @@ header p {
 }
 
 .theme-select {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 10px 14px;
   border: 1px solid #d0d0d0;
   border-radius: 4px;
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   background: white;
   color: #1a1a1a;
   cursor: pointer;
   transition: border-color 0.2s;
-  min-width: 150px;
 }
 
 .theme-select:focus {
@@ -188,7 +213,7 @@ header p {
   gap: 16px;
   align-items: center;
   justify-content: center;
-  order: 1;
+  flex: 1;
 }
 
 .card-preview {
@@ -282,6 +307,18 @@ header p {
   }
 }
 
+@media (max-width: 968px) {
+  .card-and-theme {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .theme-section {
+    padding-top: 0;
+    width: 100%;
+  }
+}
+
 @media (max-width: 600px) {
   .app {
     padding: 20px 16px;
@@ -300,9 +337,8 @@ header p {
     gap: 4px;
   }
 
-  .github-logo {
-    width: 28px;
-    height: 28px;
+  .fire-logo {
+    font-size: 1.75rem;
   }
 
   header h1 {
@@ -312,6 +348,16 @@ header p {
   .main-content {
     padding: 24px;
     gap: 24px;
+  }
+
+  .card-and-theme {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .theme-section {
+    padding-top: 0;
+    width: 100%;
   }
 
   .action-buttons {
