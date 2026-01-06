@@ -7,7 +7,9 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [imageLoading, setImageLoading] = useState(false)
   const [error, setError] = useState('')
+  const [imageError, setImageError] = useState(false)
   const [theme, setTheme] = useState('')
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   
   const themes = [
     { value: '58a6ff', label: 'Blue' },
@@ -20,7 +22,7 @@ function App() {
     { value: '8b5cf6', label: 'Violet' }
   ]
 
-  const API_BASE = 'http://localhost:5000/api/streak'
+  const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
 
   const generateCardUrl = (user, themeColor) => {
     const params = new URLSearchParams()
@@ -32,25 +34,47 @@ function App() {
     return queryString ? `${API_BASE}/card/${user}?${queryString}` : `${API_BASE}/card/${user}`
   }
 
-  const handleGenerate = async () => {
+  // Validate GitHub username format
+  const validateUsername = (username) => {
     if (!username.trim()) {
-      setError('Please enter a GitHub username')
+      return { valid: false, message: 'Please enter a GitHub username' }
+    }
+    // GitHub username rules: alphanumeric and hyphens, 1-39 characters, cannot start/end with hyphen
+    const usernameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9]|-(?![.-])){0,37}[a-zA-Z0-9]$/
+    if (!usernameRegex.test(username.trim())) {
+      return { valid: false, message: 'Invalid GitHub username format' }
+    }
+    return { valid: true }
+  }
+
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type })
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' })
+    }, 3000)
+  }
+
+  const handleGenerate = async () => {
+    const validation = validateUsername(username)
+    if (!validation.valid) {
+      setError(validation.message)
       return
     }
 
     setLoading(true)
     setImageLoading(true)
     setError('')
+    setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username, theme)
+      const baseUrl = generateCardUrl(username.trim(), theme)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
-      console.log('Generated card URL:', url)
       setCardUrl(url)
     } catch (err) {
-      setError('Failed to generate card. Please try again.')
-      console.error(err)
+      // Don't expose internal error details
+      setError('Failed to generate card. Please check the username and try again.')
       setImageLoading(false)
+      setImageError(true)
     } finally {
       setLoading(false)
     }
@@ -62,30 +86,83 @@ function App() {
     // Regenerate card URL if username exists (card should update immediately)
     if (username.trim()) {
       setImageLoading(true)
+      setImageError(false)
+      setError('')
       const baseUrl = generateCardUrl(username, newTheme)
       // Add timestamp to force browser to reload the image
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
-      console.log('New card URL with theme:', url, 'Theme:', newTheme)
     }
   }
 
   const handleImageLoad = () => {
     setImageLoading(false)
+    setImageError(false)
+    setError('') // Clear any previous errors on successful load
   }
 
-  const handleImageError = () => {
+  const handleImageError = async (e) => {
     setImageLoading(false)
-    setError('Failed to load card image. Please try again.')
+    setImageError(true)
+    
+    // Check if it's a 404 or other HTTP error
+    const img = e.target
+    if (img && img.src) {
+      try {
+        const res = await fetch(img.src)
+        if (res.status === 404) {
+          setError('User not found. Please check the username and try again.')
+        } else if (res.status === 403) {
+          setError('Rate limit exceeded. Please try again later.')
+        } else if (res.status >= 500) {
+          setError('Server error. Please try again later.')
+        } else {
+          // Try to get error message from JSON response
+          try {
+            const errorData = await res.json()
+            setError(errorData.error || 'Failed to load card. Please try again.')
+          } catch {
+            setError('Failed to load card. Please try again.')
+          }
+        }
+      } catch {
+        // Network error or other fetch failure
+        setError('Unable to load card. Please check your connection and try again.')
+      }
+    } else {
+      setError('Failed to load card. Please try again.')
+    }
   }
 
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text)
-      alert('Copied to clipboard!')
+      showToast('Copied to clipboard!', 'success')
     } catch (err) {
-      console.error('Failed to copy:', err)
-      alert('Failed to copy to clipboard')
+      showToast('Failed to copy to clipboard', 'error')
+    }
+  }
+
+  const downloadCard = async () => {
+    if (!cardUrl) {
+      showToast('Please generate a card first', 'error')
+      return
+    }
+    try {
+      const response = await fetch(cardUrl)
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `github-streak-${username || 'card'}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      showToast('Card downloaded successfully!', 'success')
+    } catch (err) {
+      // Don't expose internal error details
+      showToast('Unable to download card. Please try again.', 'error')
     }
   }
 
@@ -166,22 +243,33 @@ function App() {
                         <p>Loading card...</p>
                       </div>
                     )}
-                    <img 
-                      key={cardUrl} 
-                      src={cardUrl} 
-                      alt="GitHub Streak Card"
-                      style={{ display: imageLoading ? 'none' : 'block' }}
-                      onLoad={handleImageLoad}
-                      onError={handleImageError}
-                    />
+                    {imageError && (
+                      <div className="image-error">
+                        <p>⚠️</p>
+                        <p>Failed to load card</p>
+                      </div>
+                    )}
+                    {!imageError && (
+                      <img 
+                        key={cardUrl} 
+                        src={cardUrl} 
+                        alt="GitHub Streak Card"
+                        style={{ display: imageLoading ? 'none' : 'block' }}
+                        onLoad={handleImageLoad}
+                        onError={handleImageError}
+                      />
+                    )}
                   </div>
-                  {!imageLoading && (
+                  {!imageLoading && !imageError && (
                     <div className="action-buttons">
                       <button onClick={copyHtmlCode} className="copy-button">
                         Copy HTML Code
                       </button>
                       <button onClick={copyUrl} className="copy-button">
                         Copy Markdown Link
+                      </button>
+                      <button onClick={downloadCard} className="copy-button download-button">
+                        Download
                       </button>
                     </div>
                   )}
@@ -190,7 +278,7 @@ function App() {
                 <div className="placeholder">
                   <div className="preview-container">
                     <img 
-                      src="http://localhost:5000/api/streak/card/octocat?theme=58a6ff" 
+                      src={`${API_BASE}/card/octocat?theme=58a6ff`}
                       alt="Preview Card" 
                       className="preview-image"
                     />
@@ -203,6 +291,13 @@ function App() {
           </div>
         </div>
       </div>
+      
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`toast toast-${toast.type}`}>
+          <span>{toast.message}</span>
+        </div>
+      )}
     </div>
   )
 }

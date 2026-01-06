@@ -262,6 +262,25 @@ header p {
   100% { transform: rotate(360deg); }
 }
 
+.image-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 40px;
+  gap: 12px;
+  color: #ef4444;
+}
+
+.image-error p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.image-error p:first-child {
+  font-size: 2rem;
+}
+
 .placeholder {
   background: #fafafa;
   padding: 24px;
@@ -292,6 +311,10 @@ header p {
   font-size: 0.8125rem;
   font-style: italic;
   margin: 0;
+  background: #fff3cd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ffc107;
 }
 
 .preview-instruction {
@@ -301,7 +324,8 @@ header p {
 }
 
 .action-buttons {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   width: 100%;
 }
@@ -326,6 +350,54 @@ header p {
 
 .copy-button:active {
   background: #1e40af;
+}
+
+.download-button {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.download-button:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+.download-button:active {
+  background: #047857;
+}
+
+.toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.toast-success {
+  background: #10b981;
+  color: white;
+}
+
+.toast-error {
+  background: #ef4444;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @media (max-width: 968px) {
@@ -388,6 +460,6 @@ header p {
   }
 
   .action-buttons {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
 }

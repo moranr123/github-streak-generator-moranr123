@@ -17,7 +17,6 @@ export async function generateStreakCard({ username, current, longest, total, av
   
   // Merge with custom colors
   const cardColors = { ...defaultColors, ...colors };
-  console.log('Card colors being used:', cardColors);
   const width = 800;
   const height = 400;
   const canvas = createCanvas(width, height);
@@ -60,7 +59,10 @@ export async function generateStreakCard({ username, current, longest, total, av
       ctx.arc(70, 70, 45, 0, Math.PI * 2);
       ctx.stroke();
     } catch (err) {
-      console.error("Failed to load avatar:", err);
+      // Silently fail avatar loading - card will still work without avatar
+      if (process.env.NODE_ENV === 'development') {
+        console.error("Failed to load avatar:", err.message);
+      }
     }
   }
 

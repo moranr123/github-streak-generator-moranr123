@@ -18,8 +18,16 @@ export const getStreak = async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch streak" });
+    // Log error for debugging but don't expose to user
+    console.error(`Error fetching streak for ${username}:`, err.message);
+    // Check for specific error types
+    if (err.statusCode === 404 || err.response?.status === 404) {
+      res.status(404).json({ error: "User not found" });
+    } else if (err.statusCode === 403 || err.response?.status === 403) {
+      res.status(403).json({ error: "Rate limit exceeded" });
+    } else {
+      res.status(500).json({ error: "Failed to fetch streak data" });
+    }
   }
 };
 
@@ -31,8 +39,10 @@ export const getStreakCard = async (req, res) => {
     const { current, longest } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
 
-    // Debug logging
-    console.log(`Card generation for ${username}: current=${current}, longest=${longest}, total=${total}`);
+    // Log for monitoring (can be removed in production)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Card generation for ${username}: current=${current}, longest=${longest}, total=${total}`);
+    }
 
     // Optional: fetch avatar from GitHub
     const avatarUrl = `https://github.com/${username}.png`;
@@ -43,7 +53,10 @@ export const getStreakCard = async (req, res) => {
       const themeHex = req.query.theme.replace('#', '');
       const themeColor = `#${themeHex}`;
       
-      console.log(`Applying theme: ${themeColor}`);
+      // Debug logging (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Applying theme: ${themeColor}`);
+      }
       
       // Convert hex to RGB
       const hexToRgb = (hex) => {
@@ -84,7 +97,10 @@ export const getStreakCard = async (req, res) => {
       colors.currentStreak = lighten(themeHex, 0.85); // Light text
       colors.longestStreak = lighten(themeHex, 0.85); // Light text
       
-      console.log('Generated colors:', colors);
+      // Debug logging (development only)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Generated colors:', colors);
+      }
     }
 
     const buffer = await generateStreakCard({ username, current, longest, total, avatarUrl, colors });
@@ -92,7 +108,16 @@ export const getStreakCard = async (req, res) => {
     res.setHeader("Content-Type", "image/png");
     res.send(buffer);
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to generate streak card" });
+    // Log error for debugging but don't expose to user
+    console.error(`Error generating card for ${username}:`, err.message);
+    // Check for specific error types
+    if (err.statusCode === 404 || err.response?.status === 404) {
+      res.status(404).json({ error: "User not found" });
+    } else if (err.statusCode === 403 || err.response?.status === 403) {
+      res.status(403).json({ error: "Rate limit exceeded" });
+    } else {
+      // Generic error message - don't expose internal details
+      res.status(500).json({ error: "Failed to generate streak card" });
+    }
   }
 };
