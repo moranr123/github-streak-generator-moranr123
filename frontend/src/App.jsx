@@ -51,11 +51,11 @@ function App() {
     }
   }
 
-  const handleThemeChange = (value) => {
-    const newTheme = value.replace('#', '')
+  const handleThemeChange = (e) => {
+    const newTheme = e.target.value
     setTheme(newTheme)
     // Regenerate card URL if username exists
-    if (username.trim() && cardUrl) {
+    if (username.trim() && cardUrl && newTheme) {
       setCardUrl(generateCardUrl(username, newTheme))
     }
   }
