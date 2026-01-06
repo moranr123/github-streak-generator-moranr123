@@ -43,6 +43,8 @@ export const getStreakCard = async (req, res) => {
       const themeHex = req.query.theme.replace('#', '');
       const themeColor = `#${themeHex}`;
       
+      console.log(`Applying theme: ${themeColor}`);
+      
       // Convert hex to RGB
       const hexToRgb = (hex) => {
         const r = parseInt(hex.substring(0, 2), 16);
@@ -81,6 +83,8 @@ export const getStreakCard = async (req, res) => {
       colors.totalCommits = themeColor;
       colors.currentStreak = lighten(themeHex, 0.85); // Light text
       colors.longestStreak = lighten(themeHex, 0.85); // Light text
+      
+      console.log('Generated colors:', colors);
     }
 
     const buffer = await generateStreakCard({ username, current, longest, total, avatarUrl, colors });

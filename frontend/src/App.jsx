@@ -5,6 +5,7 @@ function App() {
   const [username, setUsername] = useState('')
   const [cardUrl, setCardUrl] = useState('')
   const [loading, setLoading] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
   const [error, setError] = useState('')
   const [theme, setTheme] = useState('')
   
@@ -38,14 +39,18 @@ function App() {
     }
 
     setLoading(true)
+    setImageLoading(true)
     setError('')
     
     try {
-      const url = generateCardUrl(username, theme)
+      const baseUrl = generateCardUrl(username, theme)
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+      console.log('Generated card URL:', url)
       setCardUrl(url)
     } catch (err) {
       setError('Failed to generate card. Please try again.')
       console.error(err)
+      setImageLoading(false)
     } finally {
       setLoading(false)
     }
@@ -56,9 +61,22 @@ function App() {
     setTheme(newTheme)
     // Regenerate card URL if username exists (card should update immediately)
     if (username.trim()) {
-      const url = generateCardUrl(username, newTheme)
+      setImageLoading(true)
+      const baseUrl = generateCardUrl(username, newTheme)
+      // Add timestamp to force browser to reload the image
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
+      console.log('New card URL with theme:', url, 'Theme:', newTheme)
     }
+  }
+
+  const handleImageLoad = () => {
+    setImageLoading(false)
+  }
+
+  const handleImageError = () => {
+    setImageLoading(false)
+    setError('Failed to load card image. Please try again.')
   }
 
   const copyToClipboard = async (text) => {
@@ -107,16 +125,31 @@ function App() {
             {cardUrl ? (
               <>
                 <div className="card-preview">
-                  <img src={cardUrl} alt="GitHub Streak Card" />
+                  {imageLoading && (
+                    <div className="image-loading">
+                      <div className="loading-spinner"></div>
+                      <p>Loading card...</p>
+                    </div>
+                  )}
+                  <img 
+                    key={cardUrl} 
+                    src={cardUrl} 
+                    alt="GitHub Streak Card"
+                    style={{ display: imageLoading ? 'none' : 'block' }}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                  />
                 </div>
-                <div className="action-buttons">
-                  <button onClick={copyHtmlCode} className="copy-button">
-                    Copy HTML Code
-                  </button>
-                  <button onClick={copyUrl} className="copy-button">
-                    Copy URL
-                  </button>
-                </div>
+                {!imageLoading && (
+                  <div className="action-buttons">
+                    <button onClick={copyHtmlCode} className="copy-button">
+                      Copy HTML Code
+                    </button>
+                    <button onClick={copyUrl} className="copy-button">
+                      Copy URL
+                    </button>
+                  </div>
+                )}
               </>
             ) : (
               <div className="placeholder">

@@ -17,6 +17,7 @@ export async function generateStreakCard({ username, current, longest, total, av
   
   // Merge with custom colors
   const cardColors = { ...defaultColors, ...colors };
+  console.log('Card colors being used:', cardColors);
   const width = 800;
   const height = 400;
   const canvas = createCanvas(width, height);
