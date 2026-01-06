@@ -103,6 +103,28 @@ function App() {
         </header>
 
         <div className="main-content">
+          <div className="card-section">
+            {cardUrl ? (
+              <>
+                <div className="card-preview">
+                  <img src={cardUrl} alt="GitHub Streak Card" />
+                </div>
+                <div className="action-buttons">
+                  <button onClick={copyHtmlCode} className="copy-button">
+                    Copy HTML Code
+                  </button>
+                  <button onClick={copyUrl} className="copy-button">
+                    Copy URL
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="placeholder">
+                <p>Enter a username and click "Generate Card" to see your streak card</p>
+              </div>
+            )}
+          </div>
+
           <div className="input-section">
             <div className="input-group">
               <label htmlFor="username">GitHub Username</label>
@@ -200,28 +222,6 @@ function App() {
                 </div>
               </div>
             </div>
-          </div>
-
-          <div className="card-section">
-            {cardUrl ? (
-              <>
-                <div className="card-preview">
-                  <img src={cardUrl} alt="GitHub Streak Card" />
-                </div>
-                <div className="action-buttons">
-                  <button onClick={copyHtmlCode} className="copy-button">
-                    Copy HTML Code
-                  </button>
-                  <button onClick={copyUrl} className="copy-button">
-                    Copy URL
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="placeholder">
-                <p>Enter a username and click "Generate Card" to see your streak card</p>
-              </div>
-            )}
           </div>
         </div>
       </div>
