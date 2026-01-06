@@ -1,18 +1,29 @@
 // /src/utils/streakCard.js
 import { createCanvas, loadImage } from "canvas";
 
-export async function generateStreakCard({ username, current, longest, total, avatarUrl, colors = {}, fontSize = 'normal', layout = 'horizontal' }) {
-  // Default colors
+export async function generateStreakCard({ 
+  username, 
+  current, 
+  longest, 
+  total, 
+  avatarUrl, 
+  colors = {}, 
+  fontSize = 'normal', 
+  hideAvatar = false,
+  currentRange = null,
+  longestRange = null,
+  firstContribution = null,
+  lastContribution = null
+}) {
+  // Default colors - dark purple theme
   const defaultColors = {
-    background: "#0d1117",
-    backgroundGradient: "#161b22",
-    border: "#30363d",
-    text: "#f0f6fc",
-    accent: "#58a6ff",
-    currentStreak: "#f0f6fc",
-    longestStreak: "#f0f6fc",
-    totalCommits: "#7c3aed",
-    avatarBorder: "#58a6ff"
+    background: "#1e1b4b", // Dark purple
+    text: "#ffffff",
+    dateText: "#ec4899", // Magenta
+    currentStreak: "#f97316", // Orange
+    longestStreak: "#ffffff",
+    totalCommits: "#ffffff",
+    divider: "#ffffff"
   };
   
   // Merge with custom colors
@@ -22,41 +33,39 @@ export async function generateStreakCard({ username, current, longest, total, av
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  // Modern gradient background
-  const gradient = ctx.createLinearGradient(0, 0, width, height);
-  gradient.addColorStop(0, cardColors.background);
-  gradient.addColorStop(0.5, cardColors.backgroundGradient);
-  gradient.addColorStop(1, cardColors.background);
-  ctx.fillStyle = gradient;
+  // Dark purple background
+  ctx.fillStyle = cardColors.background;
+  ctx.fillRect(0, 0, width, height);
+  
+  // Rounded corners effect (simulated with border)
+  ctx.strokeStyle = cardColors.background;
+  ctx.lineWidth = 0;
   ctx.fillRect(0, 0, width, height);
 
-  // Decorative border with rounded corners effect
-  ctx.strokeStyle = cardColors.border;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(1, 1, width - 2, height - 2);
+  // Calculate font sizes based on fontSize parameter
+  const fontSizeMultiplier = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.15 : 1.0;
 
-  // Inner glow effect
-  ctx.strokeStyle = "#21262d";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(2, 2, width - 4, height - 4);
-
-  // Load avatar with border
-  if (avatarUrl) {
+  // Load avatar with border (only if not hidden)
+  if (avatarUrl && !hideAvatar) {
     try {
       const avatar = await loadImage(avatarUrl);
-      // Draw avatar with circular border
+      // Draw avatar with circular border at top center
+      const avatarX = width / 2;
+      const avatarY = 50;
+      const avatarRadius = 35;
+      
       ctx.save();
       ctx.beginPath();
-      ctx.arc(70, 70, 45, 0, Math.PI * 2);
+      ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2);
       ctx.clip();
-      ctx.drawImage(avatar, 25, 25, 90, 90);
+      ctx.drawImage(avatar, avatarX - avatarRadius, avatarY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
       ctx.restore();
       
       // Avatar border
-      ctx.strokeStyle = cardColors.avatarBorder;
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = cardColors.text;
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(70, 70, 45, 0, Math.PI * 2);
+      ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2);
       ctx.stroke();
     } catch (err) {
       // Silently fail avatar loading - card will still work without avatar
@@ -66,160 +75,163 @@ export async function generateStreakCard({ username, current, longest, total, av
     }
   }
 
-  // Calculate font sizes based on fontSize parameter
-  const fontSizeMultiplier = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.15 : 1.0;
-  const usernameFontSize = Math.round(32 * fontSizeMultiplier);
-  const labelFontSize = Math.round(18 * fontSizeMultiplier);
-  const valueFontSize = Math.round(42 * fontSizeMultiplier);
-  const emojiFontSize = Math.round(32 * fontSizeMultiplier);
+  // Username below avatar (only if avatar is not hidden)
+  if (!hideAvatar) {
+    ctx.fillStyle = cardColors.text;
+    const usernameFontSize = Math.round(24 * fontSizeMultiplier);
+    ctx.font = `bold ${usernameFontSize}px 'Segoe UI', Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(username, width / 2, 95);
+  }
+  const largeNumberSize = Math.round(64 * fontSizeMultiplier);
+  const labelSize = Math.round(16 * fontSizeMultiplier);
+  const dateSize = Math.round(14 * fontSizeMultiplier);
+  const circleNumberSize = Math.round(48 * fontSizeMultiplier);
 
-  // Username with modern styling
-  ctx.fillStyle = cardColors.text;
-  ctx.font = `bold ${usernameFontSize}px 'Segoe UI', Arial, sans-serif`;
-  ctx.fillText(username, 150, 65);
+  // Helper function to format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr + 'T00:00:00Z');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+  };
 
-  // Stats container background
-  const statsY = 120;
-  const statsHeight = 240;
-  ctx.fillStyle = "rgba(22, 27, 34, 0.6)";
-  ctx.fillRect(40, statsY, width - 80, statsHeight);
+  const formatDateShort = (dateStr) => {
+    if (!dateStr) return '';
+    const date = new Date(dateStr + 'T00:00:00Z');
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return `${months[date.getUTCMonth()]} ${date.getUTCDate()}`;
+  };
 
-  // Stats border
-  ctx.strokeStyle = "#30363d";
-  ctx.lineWidth = 1;
-  ctx.strokeRect(40, statsY, width - 80, statsHeight);
+  // Stats container - centered vertically (below username/avatar)
+  const statsY = hideAvatar ? 80 : 140;
+  const statsHeight = height - statsY - 40;
+  const sectionWidth = (width - 120) / 3; // Three equal sections with padding
+  const sectionPadding = 40;
+  const sectionCenterY = statsY + statsHeight / 2;
 
-  // Layout configuration
-  let col1X, col2X, col3X, colWidth, statsLayoutY;
+  // Left Section: Total Contributions
+  const leftX = sectionPadding;
+  const leftCenterX = leftX + sectionWidth / 2;
   
-  if (layout === 'vertical') {
-    // Vertical layout: stack stats vertically in center
-    const centerX = width / 2;
-    statsLayoutY = statsY + 20;
-    const rowHeight = Math.max(75, valueFontSize + 30);
-    const statWidth = 300;
-    const statStartX = centerX - statWidth / 2;
-    
-    // Row 1: Current streak
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const currentLabelWidth = ctx.measureText("Current Streak").width;
-    ctx.fillText("Current Streak", statStartX + (statWidth - currentLabelWidth) / 2, statsLayoutY);
-    
-    ctx.fillStyle = cardColors.currentStreak;
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const currentText = `${current}`;
-    const currentTextWidth = ctx.measureText(currentText).width;
-    const currentX = statStartX + (statWidth - currentTextWidth - 40) / 2;
-    ctx.fillText(currentText, currentX, statsLayoutY + 35);
-    ctx.fillStyle = "#f85149";
-    ctx.font = `bold ${emojiFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("🔥", currentX + currentTextWidth + 10, statsLayoutY + 35);
-
-    // Row 2: Longest streak
-    statsLayoutY += rowHeight;
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const longestLabelWidth = ctx.measureText("Longest Streak").width;
-    ctx.fillText("Longest Streak", statStartX + (statWidth - longestLabelWidth) / 2, statsLayoutY);
-    
-    ctx.fillStyle = cardColors.longestStreak;
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const longestText = `${longest}`;
-    const longestTextWidth = ctx.measureText(longestText).width;
-    const longestX = statStartX + (statWidth - longestTextWidth - 40) / 2;
-    ctx.fillText(longestText, longestX, statsLayoutY + 35);
-    ctx.fillStyle = "#f1c40f";
-    ctx.font = `bold ${emojiFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("🏆", longestX + longestTextWidth + 10, statsLayoutY + 35);
-
-    // Row 3: Total commits
-    statsLayoutY += rowHeight;
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const totalLabelWidth = ctx.measureText("Total Commits").width;
-    ctx.fillText("Total Commits", statStartX + (statWidth - totalLabelWidth) / 2, statsLayoutY);
-    
-    ctx.fillStyle = cardColors.totalCommits;
-    const totalText = total.toLocaleString();
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    let totalTextWidth = ctx.measureText(totalText).width;
-    let totalFontSize = valueFontSize;
-    if (totalTextWidth > statWidth - 50) {
-      totalFontSize = Math.round(valueFontSize * 0.85);
-      ctx.font = `bold ${totalFontSize}px 'Segoe UI', Arial, sans-serif`;
-      totalTextWidth = ctx.measureText(totalText).width;
-    }
-    const totalX = statStartX + (statWidth - totalTextWidth - 40) / 2;
-    ctx.fillText(totalText, totalX, statsLayoutY + 35);
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${Math.round(emojiFontSize * 0.875)}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("📈", totalX + totalTextWidth + 10, statsLayoutY + 35);
-  } else {
-    // Horizontal layout (default): three columns
-    col1X = 70;
-    col2X = 300;
-    col3X = 530;
-    colWidth = 200;
-
-    // Column 1: Current streak
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("Current Streak", col1X, statsY + 35);
-    ctx.fillStyle = cardColors.currentStreak;
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const currentText = `${current}`;
-    ctx.fillText(currentText, col1X, statsY + 80);
-    ctx.fillStyle = "#f85149";
-    ctx.font = `bold ${emojiFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("🔥", col1X + ctx.measureText(currentText).width + 10, statsY + 80);
-
-    // Column 2: Longest streak
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("Longest Streak", col2X, statsY + 35);
-    ctx.fillStyle = cardColors.longestStreak;
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    const longestText = `${longest}`;
-    ctx.fillText(longestText, col2X, statsY + 80);
-    ctx.fillStyle = "#f1c40f";
-    ctx.font = `bold ${emojiFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("🏆", col2X + ctx.measureText(longestText).width + 10, statsY + 80);
-
-    // Column 3: Total commits - make it prominent
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${labelFontSize}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("Total Commits", col3X, statsY + 35);
-    ctx.fillStyle = cardColors.totalCommits;
-    const totalText = total.toLocaleString();
-    ctx.font = `bold ${valueFontSize}px 'Segoe UI', Arial, sans-serif`;
-    let totalTextWidth = ctx.measureText(totalText).width;
-    let totalFontSize = valueFontSize;
-    if (totalTextWidth > colWidth - 50) {
-      totalFontSize = Math.round(valueFontSize * 0.85);
-      ctx.font = `bold ${totalFontSize}px 'Segoe UI', Arial, sans-serif`;
-      totalTextWidth = ctx.measureText(totalText).width;
-    }
-    const totalX = col3X + Math.max(0, (colWidth - totalTextWidth - 30) / 2);
-    ctx.fillText(totalText, totalX, statsY + 80);
-    ctx.fillStyle = cardColors.accent;
-    ctx.font = `bold ${Math.round(emojiFontSize * 0.875)}px 'Segoe UI', Arial, sans-serif`;
-    ctx.fillText("📈", totalX + totalTextWidth + 10, statsY + 80);
+  // Calculate vertical spacing for left section
+  const leftNumberY = sectionCenterY - 50;
+  const leftLabelY = sectionCenterY + 10;
+  const leftDateY = sectionCenterY + 35;
+  
+  // Total number
+  ctx.fillStyle = cardColors.totalCommits;
+  ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
+  const totalText = total.toLocaleString();
+  const totalTextWidth = ctx.measureText(totalText).width;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(totalText, leftCenterX, leftNumberY);
+  
+  // Label
+  ctx.fillStyle = cardColors.text;
+  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+  const totalLabel = "Total Contributions";
+  ctx.textBaseline = 'top';
+  ctx.fillText(totalLabel, leftCenterX, leftLabelY);
+  
+  // Date range
+  if (firstContribution && lastContribution) {
+    ctx.fillStyle = cardColors.dateText;
+    ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+    const dateRange = `${formatDate(firstContribution)} - Present`;
+    ctx.fillText(dateRange, leftCenterX, leftDateY);
   }
 
-  // Decorative divider lines (only for horizontal layout)
-  if (layout === 'horizontal') {
-    ctx.strokeStyle = cardColors.border;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(col2X - 30, statsY + 20);
-    ctx.lineTo(col2X - 30, statsY + statsHeight - 20);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(col3X - 30, statsY + 20);
-    ctx.lineTo(col3X - 30, statsY + statsHeight - 20);
-    ctx.stroke();
+  // Middle Section: Current Streak (with circle)
+  const middleX = sectionPadding + sectionWidth;
+  const middleCenterX = middleX + sectionWidth / 2;
+  const circleY = sectionCenterY;
+  const circleRadius = 50;
+  
+  // Draw circle outline
+  ctx.strokeStyle = cardColors.text;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(middleCenterX, circleY, circleRadius, 0, Math.PI * 2);
+  ctx.stroke();
+  
+  // Flame icon above circle
+  ctx.fillStyle = cardColors.currentStreak;
+  ctx.font = `bold ${32}px 'Segoe UI', Arial, sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15);
+  
+  // Number inside circle
+  ctx.fillStyle = cardColors.currentStreak;
+  ctx.font = `bold ${circleNumberSize}px 'Segoe UI', Arial, sans-serif`;
+  const currentText = `${current}`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(currentText, middleCenterX, circleY);
+  
+  // Label below circle
+  ctx.fillStyle = cardColors.currentStreak;
+  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+  const currentLabel = "Current Streak";
+  ctx.textBaseline = 'top';
+  ctx.fillText(currentLabel, middleCenterX, circleY + circleRadius + 20);
+  
+  // Date range
+  if (currentRange && currentRange.start && currentRange.end) {
+    ctx.fillStyle = cardColors.dateText;
+    ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+    const dateRange = `${formatDateShort(currentRange.start)} - ${formatDateShort(currentRange.end)}`;
+    ctx.fillText(dateRange, middleCenterX, circleY + circleRadius + 40);
   }
+
+  // Right Section: Longest Streak
+  const rightX = sectionPadding + sectionWidth * 2;
+  const rightCenterX = rightX + sectionWidth / 2;
+  
+  // Calculate vertical spacing for right section (same as left)
+  const rightNumberY = sectionCenterY - 50;
+  const rightLabelY = sectionCenterY + 10;
+  const rightDateY = sectionCenterY + 35;
+  
+  // Longest number
+  ctx.fillStyle = cardColors.longestStreak;
+  ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
+  const longestText = `${longest}`;
+  ctx.textBaseline = 'middle';
+  ctx.fillText(longestText, rightCenterX, rightNumberY);
+  
+  // Label
+  ctx.fillStyle = cardColors.text;
+  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+  const longestLabel = "Longest Streak";
+  ctx.textBaseline = 'top';
+  ctx.fillText(longestLabel, rightCenterX, rightLabelY);
+  
+  // Date range
+  if (longestRange && longestRange.start && longestRange.end) {
+    ctx.fillStyle = cardColors.dateText;
+    ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+    const dateRange = `${formatDateShort(longestRange.start)} - ${formatDateShort(longestRange.end)}`;
+    ctx.fillText(dateRange, rightCenterX, rightDateY);
+  }
+  
+  // Reset text alignment
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+
+  // Vertical divider lines
+  ctx.strokeStyle = cardColors.divider;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(middleX, statsY + 20);
+  ctx.lineTo(middleX, statsY + statsHeight - 20);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(rightX, statsY + 20);
+  ctx.lineTo(rightX, statsY + statsHeight - 20);
+  ctx.stroke();
 
   return canvas.toBuffer("image/png");
 }

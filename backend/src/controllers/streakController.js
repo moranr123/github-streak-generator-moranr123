@@ -8,8 +8,21 @@ export const getStreak = async (req, res) => {
   const { username } = req.params;
   try {
     const contributions = await fetchGitHubData(username);
-    const { current, longest } = calculateStreaks(contributions);
+    const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
+    
+    // Get first and last contribution dates for total contributions range
+    const contributionDays = contributions.filter(d => d.count > 0).sort((a, b) => {
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
+      return dateA - dateB;
+    });
+    const firstContribution = contributionDays.length > 0 
+      ? contributionDays[0].date 
+      : null;
+    const lastContribution = contributionDays.length > 0 
+      ? contributionDays[contributionDays.length - 1].date 
+      : null;
 
     // Debug logging
     console.log(`Streak calculation for ${username}: current=${current}, longest=${longest}, total=${total}, days=${contributions.length}`);
@@ -36,8 +49,17 @@ export const getStreakCard = async (req, res) => {
   const { username } = req.params;
   try {
     const contributions = await fetchGitHubData(username);
-    const { current, longest } = calculateStreaks(contributions);
+    const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
+    
+    // Get first and last contribution dates for total contributions range
+    const contributionDays = contributions.filter(d => d.count > 0);
+    const firstContribution = contributionDays.length > 0 
+      ? contributionDays[0].date 
+      : null;
+    const lastContribution = contributionDays.length > 0 
+      ? contributionDays[contributionDays.length - 1].date 
+      : null;
 
     // Log for monitoring (can be removed in production)
     if (process.env.NODE_ENV === 'development') {
@@ -103,9 +125,9 @@ export const getStreakCard = async (req, res) => {
       }
     }
 
-    // Extract fontSize and layout parameters
+    // Extract fontSize and hideAvatar parameters
     const fontSize = req.query.fontSize || 'normal';
-    const layout = req.query.layout || 'horizontal';
+    const hideAvatar = req.query.hideAvatar === 'true';
 
     const buffer = await generateStreakCard({ 
       username, 
@@ -115,7 +137,11 @@ export const getStreakCard = async (req, res) => {
       avatarUrl, 
       colors,
       fontSize,
-      layout
+      hideAvatar,
+      currentRange,
+      longestRange,
+      firstContribution,
+      lastContribution
     });
 
     res.setHeader("Content-Type", "image/png");

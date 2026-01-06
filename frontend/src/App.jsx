@@ -20,6 +20,7 @@ function App() {
   
   // Card customization
   const [fontSize, setFontSize] = useState('normal')
+  const [hideAvatar, setHideAvatar] = useState(false)
   
   // Export format
   const [exportFormat, setExportFormat] = useState('png')
@@ -61,13 +62,16 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [error])
 
-  const generateCardUrl = (user, themeColor, fontSizeOption) => {
+  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption) => {
     const params = new URLSearchParams()
     if (themeColor && themeColor.trim()) {
       params.append('theme', themeColor)
     }
     if (fontSizeOption && fontSizeOption !== 'normal') {
       params.append('fontSize', fontSizeOption)
+    }
+    if (hideAvatarOption) {
+      params.append('hideAvatar', 'true')
     }
     
     const queryString = params.toString()
@@ -107,7 +111,7 @@ function App() {
     setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username.trim(), theme, fontSize)
+      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     } catch (err) {
@@ -128,7 +132,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, newTheme, fontSize)
+      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar)
       // Add timestamp to force browser to reload the image
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
@@ -143,7 +147,21 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, newFontSize)
+      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar)
+      const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+      setCardUrl(url)
+    }
+  }
+
+  const handleHideAvatarChange = (e) => {
+    const newHideAvatar = e.target.checked
+    setHideAvatar(newHideAvatar)
+    // Regenerate card URL if username exists
+    if (username.trim()) {
+      setImageLoading(true)
+      setImageError(false)
+      setError('')
+      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -353,6 +371,22 @@ function App() {
 
               <div className="customization-section">
                 <h3 className="customization-title">Card Customization</h3>
+                
+                <div className="input-group toggle-group">
+                  <label htmlFor="hideAvatar" className="toggle-label">Hide Profile Image</label>
+                  <button 
+                    className={`avatar-toggle ${hideAvatar ? 'active' : ''}`}
+                    onClick={() => handleHideAvatarChange({ target: { checked: !hideAvatar } })}
+                    aria-label="Toggle profile image"
+                    role="switch"
+                    aria-checked={hideAvatar}
+                    type="button"
+                  >
+                    <span className="toggle-track">
+                      <span className="toggle-handle"></span>
+                    </span>
+                  </button>
+                </div>
                 
                 <div className="input-group">
                   <label htmlFor="fontSize">Font Size</label>

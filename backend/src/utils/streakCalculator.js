@@ -1,6 +1,6 @@
 export function calculateStreaks(days) {
   if (!days || days.length === 0) {
-    return { current: 0, longest: 0 };
+    return { current: 0, longest: 0, currentRange: null, longestRange: null };
   }
 
   // Sort days by date to ensure chronological order (oldest to newest)
@@ -10,15 +10,28 @@ export function calculateStreaks(days) {
     return dateA - dateB;
   });
 
-  // Calculate longest streak
+  // Calculate longest streak and its date range
   let longest = 0;
   let temp = 0;
-  for (let day of sortedDays) {
+  let longestStart = null;
+  let longestEnd = null;
+  let tempStart = null;
+  
+  for (let i = 0; i < sortedDays.length; i++) {
+    const day = sortedDays[i];
     if (day.count > 0) {
+      if (temp === 0) {
+        tempStart = day.date;
+      }
       temp++;
-      if (temp > longest) longest = temp;
+      if (temp > longest) {
+        longest = temp;
+        longestStart = tempStart;
+        longestEnd = day.date;
+      }
     } else {
       temp = 0;
+      tempStart = null;
     }
   }
 
