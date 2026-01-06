@@ -11,6 +11,7 @@ export async function generateStreakCard({
   fontSize = 'normal', 
   hideAvatar = false,
   cardSize = 'normal',
+  cardLayout = 'default',
   currentRange = null,
   longestRange = null,
   firstContribution = null,

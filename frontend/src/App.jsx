@@ -22,6 +22,7 @@ function App() {
   const [fontSize, setFontSize] = useState('normal')
   const [hideAvatar, setHideAvatar] = useState(false)
   const [cardSize, setCardSize] = useState('normal')
+  const [cardLayout, setCardLayout] = useState('default')
   
   // Export format
   const [exportFormat, setExportFormat] = useState('png')
@@ -44,6 +45,44 @@ function App() {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light')
     localStorage.setItem('darkMode', JSON.stringify(darkMode))
   }, [darkMode])
+
+  // Load settings from localStorage on mount (after URL params)
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('cardTheme')
+    const savedFontSize = localStorage.getItem('cardFontSize')
+    const savedHideAvatar = localStorage.getItem('cardHideAvatar')
+    const savedCardSize = localStorage.getItem('cardSize')
+    const savedCardLayout = localStorage.getItem('cardLayout')
+    
+    // Only load if not already set by URL params
+    if (!theme && savedTheme) setTheme(savedTheme)
+    if (fontSize === 'normal' && savedFontSize) setFontSize(savedFontSize)
+    if (!hideAvatar && savedHideAvatar === 'true') setHideAvatar(true)
+    if (cardSize === 'normal' && savedCardSize) setCardSize(savedCardSize)
+    if (cardLayout === 'default' && savedCardLayout) setCardLayout(savedCardLayout)
+  }, [])
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    if (theme) localStorage.setItem('cardTheme', theme)
+    else localStorage.removeItem('cardTheme')
+  }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem('cardFontSize', fontSize)
+  }, [fontSize])
+
+  useEffect(() => {
+    localStorage.setItem('cardHideAvatar', hideAvatar.toString())
+  }, [hideAvatar])
+
+  useEffect(() => {
+    localStorage.setItem('cardSize', cardSize)
+  }, [cardSize])
+
+  useEffect(() => {
+    localStorage.setItem('cardLayout', cardLayout)
+  }, [cardLayout])
   
   // Load from URL parameters on mount
   useEffect(() => {
@@ -53,12 +92,14 @@ function App() {
     const urlFontSize = params.get('fontSize')
     const urlHideAvatar = params.get('hideAvatar')
     const urlCardSize = params.get('cardSize')
+    const urlCardLayout = params.get('cardLayout')
     
     if (urlUsername) setUsername(urlUsername)
     if (urlTheme) setTheme(urlTheme)
     if (urlFontSize) setFontSize(urlFontSize)
     if (urlHideAvatar === 'true') setHideAvatar(true)
     if (urlCardSize) setCardSize(urlCardSize)
+    if (urlCardLayout) setCardLayout(urlCardLayout)
   }, [])
   
   // Update URL when settings change
@@ -69,13 +110,14 @@ function App() {
     if (fontSize !== 'normal') params.set('fontSize', fontSize)
     if (hideAvatar) params.set('hideAvatar', 'true')
     if (cardSize !== 'normal') params.set('cardSize', cardSize)
+    if (cardLayout !== 'default') params.set('cardLayout', cardLayout)
     
     const newUrl = params.toString() 
       ? `${window.location.pathname}?${params.toString()}`
       : window.location.pathname
     
     window.history.replaceState({}, '', newUrl)
-  }, [username, theme, fontSize, hideAvatar, cardSize])
+  }, [username, theme, fontSize, hideAvatar, cardSize, cardLayout])
   
   // Keyboard shortcuts
   useEffect(() => {
@@ -95,7 +137,7 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [error])
 
-  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardSizeOption) => {
+  const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardSizeOption, cardLayoutOption) => {
     const params = new URLSearchParams()
     if (themeColor && themeColor.trim()) {
       params.append('theme', themeColor)
@@ -108,6 +150,9 @@ function App() {
     }
     if (cardSizeOption && cardSizeOption !== 'normal') {
       params.append('cardSize', cardSizeOption)
+    }
+    if (cardLayoutOption && cardLayoutOption !== 'default') {
+      params.append('cardLayout', cardLayoutOption)
     }
     
     const queryString = params.toString()
@@ -147,7 +192,7 @@ function App() {
     setImageError(false)
     
     try {
-      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardSize)
+      const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardSize, cardLayout)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     } catch (err) {
@@ -168,7 +213,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar, cardSize)
+      const baseUrl = generateCardUrl(username, newTheme, fontSize, hideAvatar, cardSize, cardLayout)
       // Add timestamp to force browser to reload the image
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
@@ -183,7 +228,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar, cardSize)
+      const baseUrl = generateCardUrl(username, theme, newFontSize, hideAvatar, cardSize, cardLayout)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -197,7 +242,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar, cardSize)
+      const baseUrl = generateCardUrl(username, theme, fontSize, newHideAvatar, cardSize, cardLayout)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -211,7 +256,7 @@ function App() {
       setImageLoading(true)
       setImageError(false)
       setError('')
-      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, newCardSize)
+      const baseUrl = generateCardUrl(username, theme, fontSize, hideAvatar, newCardSize, cardLayout)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
       setCardUrl(url)
     }
@@ -224,6 +269,7 @@ function App() {
     if (fontSize !== 'normal') params.set('fontSize', fontSize)
     if (hideAvatar) params.set('hideAvatar', 'true')
     if (cardSize !== 'normal') params.set('cardSize', cardSize)
+    if (cardLayout !== 'default') params.set('cardLayout', cardLayout)
     
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`
   }
@@ -503,6 +549,20 @@ function App() {
                 </div>
 
                 <div className="input-group">
+                  <label htmlFor="cardLayout">Card Layout</label>
+                  <select
+                    id="cardLayout"
+                    value={cardLayout}
+                    onChange={handleCardLayoutChange}
+                    className="theme-select"
+                  >
+                    <option value="default">Default</option>
+                    <option value="minimal">Minimal</option>
+                    <option value="detailed">Detailed</option>
+                  </select>
+                </div>
+
+                <div className="input-group">
                   <label htmlFor="exportFormat">Export Format</label>
                   <select
                     id="exportFormat"
@@ -526,12 +586,15 @@ function App() {
             <div className="card-section">
               {cardUrl ? (
                 <>
-                  <div className="card-preview">
+                  <div className="card-preview" style={{ position: 'relative' }}>
                     {imageLoading && (
-                      <div className="image-loading">
-                        <div className="loading-spinner"></div>
-                        <p>Loading card...</p>
-                      </div>
+                      <>
+                        <div className="skeleton-loader"></div>
+                        <div className="image-loading">
+                          <div className="loading-spinner"></div>
+                          <p>Loading card...</p>
+                        </div>
+                      </>
                     )}
                     {imageError && (
                       <div className="image-error">
@@ -590,7 +653,7 @@ function App() {
                       </div>
                       <button onClick={downloadCard} className="download-button">
                         Download ({exportFormat.toUpperCase()})
-                      </button>
+        </button>
                     </div>
                   )}
                 </>
