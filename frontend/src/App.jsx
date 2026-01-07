@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import './App.css'
 import fireIcon from './assets/fire.png'
 
 function App() {
   const [username, setUsername] = useState('')
+  const [debouncedUsername, setDebouncedUsername] = useState('')
   const [cardUrl, setCardUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const [imageLoading, setImageLoading] = useState(false)
@@ -14,6 +15,15 @@ function App() {
   // Animation state
   const [cardLoaded, setCardLoaded] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  
+  // Error handling & UX states
+  const [retryCount, setRetryCount] = useState(0)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [rateLimitInfo, setRateLimitInfo] = useState({ remaining: null, reset: null })
+  
+  // Refs for retry mechanism
+  const retryTimeoutRef = useRef(null)
+  const usernameInputRef = useRef(null)
   
   // Dark mode state
   const [darkMode, setDarkMode] = useState(() => {
@@ -46,6 +56,32 @@ function App() {
   ]
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
+  
+  // Debounce username input (Performance optimization)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUsername(username)
+    }, 500) // 500ms debounce
+    
+    return () => clearTimeout(timer)
+  }, [username])
+  
+  // Offline detection
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => {
+      setIsOnline(false)
+      setError('You are currently offline. Please check your internet connection.')
+    }
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
   
   // Apply dark mode to document
   useEffect(() => {
@@ -117,23 +153,29 @@ function App() {
     window.history.replaceState({}, '', newUrl)
   }, [username, theme, fontSize, hideAvatar, cardWidth, cardHeight])
   
-  // Keyboard shortcuts
+  // Keyboard shortcuts and accessibility
   useEffect(() => {
     const handleKeyPress = (e) => {
       // Ctrl/Cmd + K to focus username input
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault()
-        document.getElementById('username')?.focus()
+        usernameInputRef.current?.focus()
       }
       // Escape to clear error
       if (e.key === 'Escape' && error) {
         setError('')
+        usernameInputRef.current?.focus()
+      }
+      // Enter on generate button when focused
+      if (e.key === 'Enter' && document.activeElement?.id === 'generate-button') {
+        e.preventDefault()
+        handleGenerate()
       }
     }
     
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [error])
+  }, [error, username])
 
   const generateCardUrl = (user, themeColor, fontSizeOption, hideAvatarOption, cardWidthOption, cardHeightOption) => {
     const params = new URLSearchParams()
@@ -182,6 +224,19 @@ function App() {
     }, 3000)
   }
 
+  // Retry mechanism with exponential backoff
+  const retryRequest = useCallback(async (fn, maxRetries = 3, delay = 1000) => {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn()
+      } catch (err) {
+        if (attempt === maxRetries - 1) throw err
+        const backoffDelay = delay * Math.pow(2, attempt)
+        await new Promise(resolve => setTimeout(resolve, backoffDelay))
+      }
+    }
+  }, [])
+
   const handleGenerate = async () => {
     const validation = validateUsername(username)
     if (!validation.valid) {
@@ -189,18 +244,28 @@ function App() {
       return
     }
 
+    if (!isOnline) {
+      setError('You are currently offline. Please check your internet connection.')
+      return
+    }
+
     setLoading(true)
     setImageLoading(true)
     setError('')
     setImageError(false)
-    setCardLoaded(false) // Reset animation state
+    setCardLoaded(false)
+    setRetryCount(0)
     
     try {
       const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardWidth, cardHeight)
       const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
-      setCardUrl(url)
+      
+      // Use retry mechanism for setting card URL
+      await retryRequest(async () => {
+        setCardUrl(url)
+        return Promise.resolve()
+      })
     } catch (err) {
-      // Don't expose internal error details
       setError('Failed to generate card. Please check the username and try again.')
       setImageLoading(false)
       setImageError(true)
@@ -212,7 +277,6 @@ function App() {
   const handleThemeChange = (e) => {
     const newTheme = e.target.value
     setTheme(newTheme)
-    setUseCustomColors(false) // Disable custom colors when selecting a theme
     // Regenerate card URL if username exists (card should update immediately)
     if (username.trim()) {
       setImageLoading(true)
@@ -408,12 +472,53 @@ function App() {
     window.open(redditUrl, '_blank', 'width=550,height=420')
   }
 
-  const handleImageLoad = () => {
-    setImageLoading(false)
-    setImageError(false)
-    setError('') // Clear any previous errors on successful load
-    setCardLoaded(true) // Trigger animation
+  const handleImageLoad = (e) => {
+    // Check if image actually loaded successfully
+    if (e.target && e.target.complete && e.target.naturalHeight !== 0) {
+      setImageLoading(false)
+      setImageError(false)
+      setError('') // Clear any previous errors on successful load
+      setCardLoaded(true) // Trigger animation
+    }
   }
+  
+  // Handle case where image is already cached (onLoad might not fire for cached images)
+  useEffect(() => {
+    if (cardUrl && imageLoading) {
+      const img = new Image()
+      let isMounted = true
+      
+      img.onload = () => {
+        if (isMounted) {
+          setImageLoading(false)
+          setImageError(false)
+          setCardLoaded(true)
+        }
+      }
+      img.onerror = () => {
+        if (isMounted) {
+          setImageLoading(false)
+          setImageError(true)
+        }
+      }
+      img.src = cardUrl
+      
+      // If image is already cached, onload fires immediately
+      if (img.complete && img.naturalHeight !== 0) {
+        if (isMounted) {
+          setImageLoading(false)
+          setImageError(false)
+          setCardLoaded(true)
+        }
+      }
+      
+      return () => {
+        isMounted = false
+        img.onload = null
+        img.onerror = null
+      }
+    }
+  }, [cardUrl, imageLoading])
 
   const handleImageError = async (e) => {
     setImageLoading(false)
@@ -424,12 +529,36 @@ function App() {
     if (img && img.src) {
       try {
         const res = await fetch(img.src)
+        
+        // Extract rate limit info from headers
+        const remaining = res.headers.get('x-ratelimit-remaining')
+        const reset = res.headers.get('x-ratelimit-reset')
+        if (remaining !== null) {
+          setRateLimitInfo({ 
+            remaining: parseInt(remaining), 
+            reset: reset ? new Date(parseInt(reset) * 1000) : null 
+          })
+        }
+        
         if (res.status === 404) {
           setError('User not found. Please check the username and try again.')
         } else if (res.status === 403) {
-          setError('Rate limit exceeded. Please try again later.')
+          const resetTime = reset ? new Date(parseInt(reset) * 1000).toLocaleTimeString() : 'later'
+          setError(`Rate limit exceeded. Please try again at ${resetTime}.`)
         } else if (res.status >= 500) {
-          setError('Server error. Please try again later.')
+          // Retry on server errors
+          if (retryCount < 3) {
+            setRetryCount(prev => prev + 1)
+            retryTimeoutRef.current = setTimeout(() => {
+              const baseUrl = generateCardUrl(username.trim(), theme, fontSize, hideAvatar, cardWidth, cardHeight)
+              const url = baseUrl + (baseUrl.includes('?') ? '&' : '?') + `t=${Date.now()}`
+              setCardUrl(url)
+              setImageLoading(true)
+              setImageError(false)
+            }, 1000 * Math.pow(2, retryCount))
+          } else {
+            setError('Server error. Please try again later.')
+          }
         } else {
           // Try to get error message from JSON response
           try {
@@ -441,12 +570,25 @@ function App() {
         }
       } catch {
         // Network error or other fetch failure
-        setError('Unable to load card. Please check your connection and try again.')
+        if (!isOnline) {
+          setError('You are currently offline. Please check your internet connection.')
+        } else {
+          setError('Unable to load card. Please check your connection and try again.')
+        }
       }
     } else {
       setError('Failed to load card. Please try again.')
     }
   }
+  
+  // Cleanup retry timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (retryTimeoutRef.current) {
+        clearTimeout(retryTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const copyToClipboard = async (text) => {
     try {
@@ -570,14 +712,20 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app" role="main">
+      {/* Skip to main content link for screen readers */}
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      
       <button 
         className={`dark-mode-toggle ${darkMode ? 'active' : ''}`}
         onClick={() => setDarkMode(!darkMode)}
-        aria-label="Toggle dark mode"
-        title="Toggle dark mode"
+        aria-label={`Toggle dark mode. Currently ${darkMode ? 'enabled' : 'disabled'}`}
+        title={`Toggle dark mode (Currently ${darkMode ? 'on' : 'off'})`}
         role="switch"
         aria-checked={darkMode}
+        tabIndex={0}
       >
         <span className="toggle-track">
           <span className="toggle-handle">
@@ -602,25 +750,31 @@ function App() {
         </span>
       </button>
       <div className="container">
-        <header>
+        <header role="banner">
           <div className="header-title">
-            <img src={fireIcon} alt="Fire" className="fire-logo" />
+            <img src={fireIcon} alt="Fire icon" className="fire-logo" />
             <h1>Github Streak Generator</h1>
           </div>
         </header>
 
-        <div className="main-content">
+        <div className="main-content" id="main-content" tabIndex={-1}>
           <div className="card-and-theme">
             <div className="left-section">
               <div className="input-group">
                 <label htmlFor="username">Username</label>
                       <input
+                        ref={usernameInputRef}
                         id="username"
                         type="text"
                         placeholder="moranr123"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleGenerate()}
+                        className={!username.trim() ? 'username-empty' : ''}
+                        aria-required="true"
+                        aria-invalid={!!error && error.includes('username')}
+                        aria-describedby={error && error.includes('username') ? 'username-error' : undefined}
+                        autoComplete="username"
                       />
               </div>
 
@@ -634,6 +788,7 @@ function App() {
                     value={theme}
                     onChange={handleThemeChange}
                     className="theme-select"
+                    aria-label="Select card theme color"
                   >
                     {themes.map((themeOption) => (
                       <option key={themeOption.value} value={themeOption.value}>
@@ -666,6 +821,7 @@ function App() {
                     value={fontSize}
                     onChange={handleFontSizeChange}
                     className="theme-select"
+                    aria-label="Select font size for the card"
                   >
                     <option value="small">Small</option>
                     <option value="normal">Normal</option>
@@ -732,6 +888,7 @@ function App() {
                     value={exportFormat}
                     onChange={(e) => setExportFormat(e.target.value)}
                     className="theme-select"
+                    aria-label="Select export format for downloaded card"
                   >
                     <option value="png">PNG</option>
                     <option value="webp">WebP</option>
@@ -740,10 +897,48 @@ function App() {
                 </div>
               </div>
 
-              {error && <div className="error">{error}</div>}
+              {error && (
+                <div className="error" role="alert" aria-live="polite" id="error-message">
+                  {error}
+                </div>
+              )}
+              
+              {/* Rate limit info */}
+              {rateLimitInfo.remaining !== null && rateLimitInfo.remaining < 10 && (
+                <div className="rate-limit-warning" role="status" aria-live="polite">
+                  ⚠️ API rate limit: {rateLimitInfo.remaining} requests remaining
+                  {rateLimitInfo.reset && (
+                    <span className="rate-limit-reset">
+                      {' '}(resets at {rateLimitInfo.reset.toLocaleTimeString()})
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {/* Offline indicator */}
+              {!isOnline && (
+                <div className="offline-indicator" role="status" aria-live="polite">
+                  🔌 You are currently offline
+                </div>
+              )}
 
-              <button onClick={handleGenerate} disabled={loading} className="submit-button">
-                {loading ? 'Generating...' : 'Generate Card'}
+              <button 
+                id="generate-button"
+                onClick={handleGenerate} 
+                disabled={loading || !isOnline} 
+                className="submit-button"
+                aria-label="Generate GitHub streak card"
+                aria-describedby={loading ? 'generating-status' : undefined}
+                aria-busy={loading}
+              >
+                {loading ? (
+                  <>
+                    <span aria-live="polite" id="generating-status">Generating...</span>
+                    <span className="sr-only">Please wait while the card is being generated</span>
+                  </>
+                ) : (
+                  'Generate Card'
+                )}
               </button>
             </div>
 
@@ -752,13 +947,19 @@ function App() {
                 <>
                   <div className="card-preview" style={{ position: 'relative' }}>
                     {imageLoading && (
-                      <>
-                        <div className="skeleton-loader"></div>
-                        <div className="image-loading">
-                          <div className="loading-spinner"></div>
-                          <p>Loading card...</p>
+                      <div className="skeleton-card" role="status" aria-live="polite" aria-label="Loading card">
+                        <div className="skeleton-header">
+                          <div className="skeleton-avatar"></div>
+                          <div className="skeleton-username"></div>
                         </div>
-                      </>
+                        <div className="skeleton-stats">
+                          <div className="skeleton-stat"></div>
+                          <div className="skeleton-stat"></div>
+                          <div className="skeleton-stat"></div>
+                        </div>
+                        <div className="skeleton-footer"></div>
+                        <span className="sr-only">Loading GitHub streak card, please wait</span>
+                      </div>
                     )}
                     {imageError && (
                       <div className="image-error">
@@ -770,11 +971,17 @@ function App() {
                       <img 
                         key={cardUrl} 
                         src={cardUrl} 
-                        alt="GitHub Streak Card"
+                        alt={`GitHub contribution streak card for ${username || 'user'}`}
                         className={`card-image ${cardLoaded ? 'fade-in' : ''}`}
-                        style={{ display: imageLoading ? 'none' : 'block' }}
+                        style={{ 
+                          display: imageLoading ? 'none' : 'block',
+                          position: 'relative',
+                          zIndex: 2
+                        }}
                         onLoad={handleImageLoad}
                         onError={handleImageError}
+                        loading="lazy"
+                        decoding="async"
                       />
                     )}
       </div>
@@ -784,7 +991,12 @@ function App() {
                         <label className="link-label">HTML Code</label>
                         <div className="link-item">
                           <code className="link-text">{`<img src="${cardUrl}" alt="GitHub Streak Card" />`}</code>
-                          <button onClick={copyHtmlCode} className="copy-icon-button" title="Copy HTML Code">
+                          <button 
+                        onClick={copyHtmlCode} 
+                        className="copy-icon-button" 
+                        title="Copy HTML Code"
+                        aria-label="Copy HTML code to clipboard"
+                      >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -796,7 +1008,12 @@ function App() {
                         <label className="link-label">Markdown Link</label>
                         <div className="link-item">
                           <code className="link-text">{`![GitHub Streak Card](${cardUrl})`}</code>
-                          <button onClick={copyUrl} className="copy-icon-button" title="Copy Markdown Link">
+                          <button 
+                            onClick={copyUrl} 
+                            className="copy-icon-button" 
+                            title="Copy Markdown Link"
+                            aria-label="Copy Markdown link to clipboard"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -808,7 +1025,12 @@ function App() {
                         <label className="link-label">Share URL</label>
                         <div className="link-item">
                           <code className="link-text">{getShareUrl()}</code>
-                          <button onClick={shareUrl} className="copy-icon-button" title="Copy Share URL">
+                          <button 
+                            onClick={shareUrl} 
+                            className="copy-icon-button" 
+                            title="Copy Share URL"
+                            aria-label="Copy share URL to clipboard"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -816,9 +1038,13 @@ function App() {
                           </button>
                         </div>
                       </div>
-                      <button onClick={downloadCard} className="download-button">
+                      <button 
+                        onClick={downloadCard} 
+                        className="download-button"
+                        aria-label={`Download card as ${exportFormat.toUpperCase()} format`}
+                      >
                         Download ({exportFormat.toUpperCase()})
-        </button>
+                      </button>
                     </div>
                   )}
                 </>
@@ -827,8 +1053,10 @@ function App() {
                   <div className="preview-container">
                     <img 
                       src={`${API_BASE}/card/moranr123?theme=ffffff`}
-                      alt="Preview Card" 
+                      alt="Preview example of GitHub streak card" 
                       className="preview-image"
+                      loading="lazy"
+                      decoding="async"
                       onError={(e) => {
                         // Hide image if it fails to load
                         e.target.style.display = 'none'

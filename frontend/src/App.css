@@ -281,6 +281,14 @@ header p {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
+.username-empty {
+  border-color: #ef4444 !important;
+}
+
+.username-empty:focus {
+  border-color: #ef4444 !important;
+}
+
 .input-error {
   border-color: var(--error-border) !important;
   background-color: var(--error-bg) !important;
@@ -359,6 +367,7 @@ header p {
   justify-content: center;
   align-items: center;
   width: 100%;
+  position: relative;
   transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
@@ -800,6 +809,195 @@ header p {
   position: absolute;
   top: 0;
   left: 0;
+}
+
+/* Improved Skeleton Card */
+.skeleton-card {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.skeleton-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.skeleton-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.skeleton-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-username {
+  flex: 1;
+  height: 24px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+  max-width: 200px;
+}
+
+.skeleton-stats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.skeleton-stat {
+  flex: 1;
+  min-width: 120px;
+  height: 80px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-footer {
+  height: 40px;
+  background: var(--bg-secondary);
+  border-radius: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+  margin-top: auto;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Rate Limit Warning */
+.rate-limit-warning {
+  background: #fff3cd;
+  color: #856404;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #ffc107;
+  font-size: 0.875rem;
+  margin-top: 8px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .rate-limit-warning {
+  background: #3d2f00;
+  color: #fbbf24;
+  border-color: #8b6914;
+}
+
+.rate-limit-reset {
+  font-size: 0.8125rem;
+  opacity: 0.9;
+}
+
+/* Offline Indicator */
+.offline-indicator {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border: 1px solid #f5c6cb;
+  font-size: 0.875rem;
+  margin-top: 8px;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="dark"] .offline-indicator {
+  background: #3d1f1f;
+  color: #f85149;
+  border-color: #5d2a2a;
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Skip Link for Accessibility */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--text-primary);
+  color: var(--bg-secondary);
+  padding: 8px;
+  text-decoration: none;
+  z-index: 100;
+  border-radius: 4px;
+}
+
+.skip-link:focus {
+  top: 20px;
+  left: 20px;
+}
+
+/* Focus improvements */
+*:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* Improved contrast for better accessibility */
+.input-group input:focus,
+.theme-select:focus {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .input-group input:focus,
+[data-theme="dark"] .theme-select:focus {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
 }
 
 @keyframes loading {

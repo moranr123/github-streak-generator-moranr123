@@ -19,7 +19,7 @@ export const fetchGitHubData = async (username) => {
   `;
 
   try {
-    const { data } = await axios.post(
+    const response = await axios.post(
       "https://api.github.com/graphql",
       { query },
       {
@@ -28,6 +28,17 @@ export const fetchGitHubData = async (username) => {
         },
       }
     );
+    
+    const { data } = response;
+    
+    // Store rate limit info for potential use
+    if (response.headers) {
+      data._rateLimit = {
+        remaining: response.headers['x-ratelimit-remaining'],
+        limit: response.headers['x-ratelimit-limit'],
+        reset: response.headers['x-ratelimit-reset']
+      };
+    }
 
     // Check for GraphQL errors
     if (data.errors) {
@@ -59,7 +70,15 @@ export const fetchGitHubData = async (username) => {
       }))
     );
 
-    return days;
+    // Store rate limit info from response headers
+    const rateLimitInfo = {
+      remaining: response.headers['x-ratelimit-remaining'],
+      limit: response.headers['x-ratelimit-limit'],
+      reset: response.headers['x-ratelimit-reset']
+    };
+
+    // Return both days and rate limit info
+    return { days, rateLimitInfo };
   } catch (err) {
     // Re-throw with status code if it has one
     if (err.statusCode) {

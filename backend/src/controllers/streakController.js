@@ -7,7 +7,33 @@ import { generateStreakCard } from "../utils/streakCard.js";
 export const getStreak = async (req, res) => {
   const { username } = req.params;
   try {
-    const contributions = await fetchGitHubData(username);
+    const result = await fetchGitHubData(username);
+    
+    // Extract days array - result is now always { days, rateLimitInfo }
+    let contributions;
+    if (Array.isArray(result)) {
+      // Old format (shouldn't happen but handle it)
+      contributions = result;
+    } else if (result && result.days && Array.isArray(result.days)) {
+      // New format
+      contributions = result.days;
+    } else {
+      throw new Error('Invalid data format received from GitHub API');
+    }
+    
+    // Forward rate limit headers if available
+    if (result && result.rateLimitInfo) {
+      if (result.rateLimitInfo.remaining) {
+        res.setHeader('X-RateLimit-Remaining', result.rateLimitInfo.remaining);
+      }
+      if (result.rateLimitInfo.limit) {
+        res.setHeader('X-RateLimit-Limit', result.rateLimitInfo.limit);
+      }
+      if (result.rateLimitInfo.reset) {
+        res.setHeader('X-RateLimit-Reset', result.rateLimitInfo.reset);
+      }
+    }
+    
     const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
     
@@ -27,9 +53,9 @@ export const getStreak = async (req, res) => {
     // Debug logging
     console.log(`Streak calculation for ${username}: current=${current}, longest=${longest}, total=${total}, days=${contributions.length}`);
 
-    const result = { username, current, longest, total };
+    const jsonResponse = { username, current, longest, total };
 
-    res.json(result);
+    res.json(jsonResponse);
   } catch (err) {
     // Log error for debugging but don't expose to user
     console.error(`Error fetching streak for ${username}:`, err.message);
@@ -48,7 +74,38 @@ export const getStreak = async (req, res) => {
 export const getStreakCard = async (req, res) => {
   const { username } = req.params;
   try {
-    const contributions = await fetchGitHubData(username);
+    const result = await fetchGitHubData(username);
+    
+    // Extract days array - result is now always { days, rateLimitInfo }
+    let contributions;
+    if (Array.isArray(result)) {
+      // Old format (shouldn't happen but handle it)
+      contributions = result;
+    } else if (result && result.days && Array.isArray(result.days)) {
+      // New format
+      contributions = result.days;
+    } else {
+      throw new Error('Invalid data format received from GitHub API');
+    }
+    
+    // Forward rate limit headers if available
+    if (result && result.rateLimitInfo) {
+      if (result.rateLimitInfo.remaining) {
+        res.setHeader('X-RateLimit-Remaining', result.rateLimitInfo.remaining);
+      }
+      if (result.rateLimitInfo.limit) {
+        res.setHeader('X-RateLimit-Limit', result.rateLimitInfo.limit);
+      }
+      if (result.rateLimitInfo.reset) {
+        res.setHeader('X-RateLimit-Reset', result.rateLimitInfo.reset);
+      }
+    }
+    
+    // Validate contributions is an array before processing
+    if (!Array.isArray(contributions) || contributions.length === 0) {
+      throw new Error('No contribution data available');
+    }
+    
     const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
     const total = contributions.reduce((sum, day) => sum + day.count, 0);
     
