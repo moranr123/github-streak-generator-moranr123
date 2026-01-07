@@ -72,8 +72,13 @@ function App() {
     window.history.replaceState({}, '', window.location.pathname)
   }, [])
 
-  // Update URL when settings change
-  useEffect(() => {
+  // Update URL only when card is generated (not on every field change)
+
+  // Handle card generation
+  const handleGenerate = () => {
+    generateCard(username, customization.getCustomization())
+    
+    // Update URL only when card is generated
     const params = new URLSearchParams()
     if (username) params.set('username', username)
     if (customization.statType && customization.statType !== 'streak') params.set('statType', customization.statType)
@@ -96,11 +101,6 @@ function App() {
       : window.location.pathname
     
     window.history.replaceState({}, '', newUrl)
-  }, [username, customization.statType, customization.theme, customization.fontSize, customization.hideAvatar, customization.cardWidth, customization.cardHeight])
-
-  // Handle card generation
-  const handleGenerate = () => {
-    generateCard(username, customization.getCustomization())
   }
 
   // Handle customization changes that should update card immediately
@@ -271,7 +271,6 @@ function App() {
               <CardGenerator
                 username={username}
                 onUsernameChange={setUsername}
-                onGenerate={handleGenerate}
                 loading={loading}
                 isOnline={isOnline}
                 error={error}
@@ -303,6 +302,25 @@ function App() {
                 onCardHeightBlur={handleCardHeightBlur}
                 onExportFormatChange={(e) => customization.setExportFormat(e.target.value)}
               />
+
+              <button 
+                id="generate-button"
+                onClick={handleGenerate} 
+                disabled={loading || !isOnline} 
+                className="submit-button"
+                aria-label="Generate GitHub streak card"
+                aria-describedby={loading ? 'generating-status' : undefined}
+                aria-busy={loading}
+              >
+                {loading ? (
+                  <>
+                    <span aria-live="polite" id="generating-status">Generating...</span>
+                    <span className="sr-only">Please wait while the card is being generated</span>
+                  </>
+                ) : (
+                  'Generate Card'
+                )}
+              </button>
 
               {error && (
                 <div className="error" role="alert" aria-live="polite" id="error-message">

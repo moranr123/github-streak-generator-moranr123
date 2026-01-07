@@ -4,7 +4,6 @@ import { STAT_TYPE_OPTIONS } from '../utils/constants'
 export function CardGenerator({ 
   username, 
   onUsernameChange, 
-  onGenerate, 
   loading, 
   isOnline,
   error,
@@ -27,16 +26,11 @@ export function CardGenerator({
       if (e.key === 'Escape' && error) {
         inputRefToUse.current?.focus()
       }
-      // Enter on generate button when focused
-      if (e.key === 'Enter' && document.activeElement?.id === 'generate-button') {
-        e.preventDefault()
-        onGenerate()
-      }
     }
     
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [error, username, inputRefToUse, onGenerate])
+  }, [error, inputRefToUse])
 
   return (
     <>
@@ -65,7 +59,14 @@ export function CardGenerator({
           placeholder="moranr123"
           value={username}
           onChange={(e) => onUsernameChange(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && onGenerate()}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              const generateButton = document.getElementById('generate-button')
+              if (generateButton && !generateButton.disabled) {
+                generateButton.click()
+              }
+            }
+          }}
           className={!username.trim() ? 'username-empty' : ''}
           aria-required="true"
           aria-invalid={!!error && error.includes('username')}
@@ -73,24 +74,6 @@ export function CardGenerator({
           autoComplete="username"
         />
       </div>
-      <button 
-        id="generate-button"
-        onClick={onGenerate} 
-        disabled={loading || !isOnline} 
-        className="submit-button"
-        aria-label="Generate GitHub streak card"
-        aria-describedby={loading ? 'generating-status' : undefined}
-        aria-busy={loading}
-      >
-        {loading ? (
-          <>
-            <span aria-live="polite" id="generating-status">Generating...</span>
-            <span className="sr-only">Please wait while the card is being generated</span>
-          </>
-        ) : (
-          'Generate Card'
-        )}
-      </button>
     </>
   )
 }
