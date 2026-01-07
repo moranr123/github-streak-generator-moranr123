@@ -1,7 +1,27 @@
 import axios from "axios";
 import { logger } from "../middleware/logger.js";
+import { cacheManager } from "../utils/cacheManager.js";
+import { getGitHubDataCacheKey } from "../utils/cacheUtils.js";
+import { CACHE_TTL } from "../utils/cacheUtils.js";
 
 export const fetchGitHubData = async (username) => {
+  // Check cache first
+  const cacheKey = getGitHubDataCacheKey(username);
+  const cached = await cacheManager.get(cacheKey);
+  
+  if (cached) {
+    logger.info({ username }, 'GitHub data retrieved from cache');
+    return cached;
+  }
+
+  // Check if GITHUB_TOKEN is set
+  if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {
+    const tokenError = new Error('GITHUB_TOKEN is not configured. Please set it in your .env file.');
+    tokenError.statusCode = 500;
+    logger.error({ error: tokenError.message }, 'GitHub token not configured');
+    throw tokenError;
+  }
+
   const query = `
     query {
       user(login: "${username}") {
@@ -78,9 +98,24 @@ export const fetchGitHubData = async (username) => {
       reset: response.headers['x-ratelimit-reset']
     };
 
+    // Prepare result
+    const result = { days, rateLimitInfo };
+
+    // Cache the result
+    await cacheManager.set(cacheKey, result, CACHE_TTL.GITHUB_DATA);
+    logger.info({ username }, 'GitHub data cached');
+
     // Return both days and rate limit info
-    return { days, rateLimitInfo };
+    return result;
   } catch (err) {
+    // Log the actual error for debugging
+    logger.error({ 
+      error: err.message, 
+      status: err.response?.status,
+      data: err.response?.data,
+      stack: err.stack 
+    }, 'GitHub API request failed');
+    
     // Re-throw with status code if it has one
     if (err.statusCode) {
       throw err;
@@ -95,6 +130,10 @@ export const fetchGitHubData = async (username) => {
         const rateLimitError = new Error('Rate limit exceeded');
         rateLimitError.statusCode = 403;
         throw rateLimitError;
+      } else if (err.response.status === 401) {
+        const authError = new Error('GitHub authentication failed - invalid token');
+        authError.statusCode = 500;
+        throw authError;
       }
     }
     // Generic error for other cases

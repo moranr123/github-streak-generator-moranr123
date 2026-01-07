@@ -1,5 +1,4 @@
 import { THEMES, FONT_SIZES, EXPORT_FORMATS, CARD_DIMENSIONS } from '../utils/constants'
-import { validateCardWidth, validateCardHeight } from '../utils/validation'
 
 export function CustomizationPanel({
   theme,
@@ -42,7 +41,7 @@ export function CustomizationPanel({
 
       <div className="input-group toggle-group">
         <label htmlFor="hideAvatar" className="toggle-label">Hide Profile Image</label>
-        <button
+        <button 
           className={`avatar-toggle ${hideAvatar ? 'active' : ''}`}
           onClick={() => onHideAvatarChange({ target: { checked: !hideAvatar } })}
           aria-label="Toggle profile image"

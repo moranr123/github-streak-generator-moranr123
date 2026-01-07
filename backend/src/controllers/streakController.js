@@ -3,6 +3,8 @@ import { fetchGitHubData } from "../services/githubService.js";
 import { calculateStreaks } from "../utils/streakCalculator.js";
 import { generateStreakCard } from "../utils/streakCard.js";
 import { logger } from "../middleware/logger.js";
+import { cacheManager } from "../utils/cacheManager.js";
+import { getCardCacheKey, generateETag, CACHE_TTL } from "../utils/cacheUtils.js";
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
@@ -225,24 +227,67 @@ export const getStreakCard = async (req, res) => {
     const cardWidth = parseInt(req.query.cardWidth) || 800;
     const cardHeight = parseInt(req.query.cardHeight) || 400;
 
-    const buffer = await generateStreakCard({ 
-      username, 
-      current, 
-      longest, 
-      total, 
-      avatarUrl, 
-      colors,
+    // Create customization object for cache key
+    const customization = {
+      theme: req.query.theme || 'ffffff',
       fontSize,
       hideAvatar,
       cardWidth,
-      cardHeight,
-      currentRange,
-      longestRange,
-      firstContribution,
-      lastContribution
-    });
+      cardHeight
+    };
 
+    // Check cache for generated card
+    const cacheKey = getCardCacheKey(username, customization);
+    const etag = generateETag(cacheKey);
+    
+    // Check if client has cached version
+    const clientETag = req.headers['if-none-match'];
+    if (clientETag === `"${etag}"`) {
+      res.status(304).end(); // Not Modified
+      return;
+    }
+
+    let buffer;
+    const cachedBuffer = await cacheManager.get(cacheKey);
+    
+    if (cachedBuffer && cachedBuffer.data) {
+      // Convert base64 string back to buffer
+      buffer = Buffer.from(cachedBuffer.data, 'base64');
+      logger.info({ username, cacheKey }, 'Card retrieved from cache');
+    } else {
+      // Generate new card
+      buffer = await generateStreakCard({ 
+        username, 
+        current, 
+        longest, 
+        total, 
+        avatarUrl, 
+        colors,
+        fontSize,
+        hideAvatar,
+        cardWidth,
+        cardHeight,
+        currentRange,
+        longestRange,
+        firstContribution,
+        lastContribution
+      });
+
+      // Cache the buffer as base64
+      await cacheManager.set(cacheKey, {
+        data: buffer.toString('base64'),
+        contentType: 'image/png'
+      }, CACHE_TTL.CARD_IMAGE);
+      
+      logger.info({ username, cacheKey }, 'Card generated and cached');
+    }
+
+    // Set HTTP cache headers
     res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=3600"); // 1 hour browser cache
+    res.setHeader("ETag", `"${etag}"`);
+    res.setHeader("Last-Modified", new Date().toUTCString());
+    
     res.send(buffer);
   } catch (err) {
     // Log error for debugging but don't expose to user
@@ -252,6 +297,9 @@ export const getStreakCard = async (req, res) => {
       res.status(404).json({ error: "User not found" });
     } else if (err.statusCode === 403 || err.response?.status === 403) {
       res.status(403).json({ error: "Rate limit exceeded" });
+    } else if (err.message && err.message.includes('GITHUB_TOKEN')) {
+      // Token configuration error
+      res.status(500).json({ error: "Server configuration error: GitHub token not set" });
     } else {
       // Generic error message - don't expose internal details
       res.status(500).json({ error: "Failed to generate streak card" });

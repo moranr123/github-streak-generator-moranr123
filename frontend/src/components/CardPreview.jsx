@@ -1,35 +1,37 @@
-import { useState, useEffect, useRef } from 'react'
-import { useImageLoader } from '../hooks/useImageLoader'
-
-export function CardPreview({ cardUrl, username, imageLoading: externalLoading, onImageLoad, onImageError }) {
-  const { loading: imageLoaderLoading, error: imageLoaderError, loaded } = useImageLoader(cardUrl)
-  const [cardLoaded, setCardLoaded] = useState(false)
-  const imgRef = useRef(null)
-
-  useEffect(() => {
-    if (loaded && !cardLoaded) {
-      setCardLoaded(true)
-      onImageLoad?.()
-    }
-  }, [loaded, cardLoaded, onImageLoad])
-
-  const handleImageLoad = (e) => {
-    if (e.target && e.target.complete && e.target.naturalHeight !== 0) {
-      setCardLoaded(true)
-      onImageLoad?.()
-    }
+export function CardPreview({
+  cardUrl,
+  username,
+  imageLoading,
+  imageError,
+  cardLoaded,
+  onImageLoad,
+  onImageError,
+  apiBase
+}) {
+  if (!cardUrl) {
+    return (
+      <div className="placeholder">
+        <div className="preview-container">
+          <img 
+            src={`${apiBase}/card/moranr123?theme=ffffff`}
+            alt="Preview example of GitHub streak card" 
+            className="preview-image"
+            loading="lazy"
+            decoding="async"
+            onError={(e) => {
+              e.target.style.display = 'none'
+            }}
+          />
+          <p className="preview-note">This is just a preview</p>
+          <p className="preview-instruction">Enter your GitHub username above to see your card</p>
+        </div>
+      </div>
+    )
   }
-
-  const handleImageError = (e) => {
-    onImageError?.(e)
-  }
-
-  const isLoading = externalLoading || imageLoaderLoading
-  const hasError = imageLoaderError
 
   return (
     <div className="card-preview" style={{ position: 'relative' }}>
-      {isLoading && (
+      {imageLoading && (
         <div className="skeleton-card" role="status" aria-live="polite" aria-label="Loading card">
           <div className="skeleton-header">
             <div className="skeleton-avatar"></div>
@@ -44,26 +46,25 @@ export function CardPreview({ cardUrl, username, imageLoading: externalLoading, 
           <span className="sr-only">Loading GitHub streak card, please wait</span>
         </div>
       )}
-      {hasError && (
+      {imageError && (
         <div className="image-error">
           <p>⚠️</p>
           <p>Failed to load card</p>
         </div>
       )}
-      {!hasError && cardUrl && (
-        <img
-          ref={imgRef}
-          key={cardUrl}
-          src={cardUrl}
+      {!imageError && (
+        <img 
+          key={cardUrl} 
+          src={cardUrl} 
           alt={`GitHub contribution streak card for ${username || 'user'}`}
           className={`card-image ${cardLoaded ? 'fade-in' : ''}`}
-          style={{
-            display: isLoading ? 'none' : 'block',
+          style={{ 
+            display: imageLoading ? 'none' : 'block',
             position: 'relative',
             zIndex: 2
           }}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
+          onLoad={onImageLoad}
+          onError={onImageError}
           loading="lazy"
           decoding="async"
         />
