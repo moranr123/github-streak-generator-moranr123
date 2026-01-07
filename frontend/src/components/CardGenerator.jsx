@@ -1,4 +1,5 @@
 import { useRef, useEffect } from 'react'
+import { STAT_TYPE_OPTIONS } from '../utils/constants'
 
 export function CardGenerator({ 
   username, 
@@ -7,7 +8,9 @@ export function CardGenerator({
   loading, 
   isOnline,
   error,
-  inputRef 
+  inputRef,
+  statType,
+  onStatTypeChange
 }) {
   const usernameInputRef = useRef(null)
   const inputRefToUse = inputRef || usernameInputRef
@@ -37,6 +40,22 @@ export function CardGenerator({
 
   return (
     <>
+      <div className="input-group">
+        <label htmlFor="stat-type">Stat Type</label>
+        <select
+          id="stat-type"
+          value={statType}
+          onChange={(e) => onStatTypeChange(e.target.value)}
+          className="stat-type-select"
+          aria-label="Select stat type"
+        >
+          {STAT_TYPE_OPTIONS.map(option => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
       <div className="input-group">
         <label htmlFor="username">Username</label>
         <input

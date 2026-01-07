@@ -28,7 +28,13 @@ export const validateUsername = (req, res, next) => {
  * Validate query parameters for card generation
  */
 export const validateCardParams = (req, res, next) => {
-  const { theme, fontSize, hideAvatar, cardWidth, cardHeight } = req.query;
+  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight } = req.query;
+  
+  // Validate statType
+  const validStatTypes = ['streak', 'top_languages', 'contributions', 'repositories'];
+  if (statType && !validStatTypes.includes(statType)) {
+    return res.status(400).json({ error: `Invalid statType. Must be one of: ${validStatTypes.join(', ')}` });
+  }
   
   // Validate theme (hex color without #)
   if (theme && !/^[0-9A-Fa-f]{6}$/.test(theme.replace('#', ''))) {

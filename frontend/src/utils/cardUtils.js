@@ -6,8 +6,13 @@
  * @returns {string} Generated card URL
  */
 export function generateCardUrl(apiBase, username, customization) {
-  const { theme, fontSize, hideAvatar, cardWidth, cardHeight } = customization
+  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight } = customization
   const params = new URLSearchParams()
+  
+  // Add statType if not default (streak)
+  if (statType && statType !== 'streak') {
+    params.append('statType', statType)
+  }
   
   const colorToUse = theme ? theme.replace('#', '') : ''
   if (colorToUse && colorToUse.trim()) {

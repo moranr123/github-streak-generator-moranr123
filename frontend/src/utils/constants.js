@@ -47,3 +47,18 @@ export const RETRY_CONFIG = {
   MAX_RETRIES: 3,
   INITIAL_DELAY: 1000
 }
+
+// Stat types
+export const STAT_TYPES = {
+  STREAK: 'streak',
+  TOP_LANGUAGES: 'top_languages',
+  CONTRIBUTIONS: 'contributions',
+  REPOSITORIES: 'repositories'
+}
+
+export const STAT_TYPE_OPTIONS = [
+  { value: STAT_TYPES.STREAK, label: 'Contribution Streak' },
+  { value: STAT_TYPES.TOP_LANGUAGES, label: 'Top Languages' },
+  { value: STAT_TYPES.CONTRIBUTIONS, label: 'Total Contributions' },
+  { value: STAT_TYPES.REPOSITORIES, label: 'Repositories' }
+]

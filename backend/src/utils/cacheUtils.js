@@ -16,10 +16,10 @@ export function getGitHubDataCacheKey(username) {
  * @returns {string} Cache key
  */
 export function getCardCacheKey(username, customization) {
-  const { theme, fontSize, hideAvatar, cardWidth, cardHeight } = customization;
+  const { statType = 'streak', theme, fontSize, hideAvatar, cardWidth, cardHeight } = customization;
   
   // Create a hash of customization options for consistent cache keys
-  const customString = `${theme}-${fontSize}-${hideAvatar}-${cardWidth}-${cardHeight}`;
+  const customString = `${statType}-${theme}-${fontSize}-${hideAvatar}-${cardWidth}-${cardHeight}`;
   const hash = crypto.createHash('md5').update(customString).digest('hex');
   
   return `card:${username.toLowerCase()}:${hash}`;

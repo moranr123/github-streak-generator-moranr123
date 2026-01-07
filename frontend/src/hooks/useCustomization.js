@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react'
 import { validateCardWidth, validateCardHeight } from '../utils/validation'
+import { STAT_TYPES } from '../utils/constants'
 
 /**
  * Custom hook for card customization state management
  */
 export function useCustomization() {
+  const [statType, setStatType] = useState(() => {
+    const saved = localStorage.getItem('statType')
+    return saved || STAT_TYPES.STREAK
+  })
+  
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('cardTheme')
     return saved || 'ffffff'
@@ -35,6 +41,10 @@ export function useCustomization() {
   const [exportFormat, setExportFormat] = useState('png')
 
   // Save to localStorage when values change
+  useEffect(() => {
+    localStorage.setItem('statType', statType)
+  }, [statType])
+
   useEffect(() => {
     if (theme) localStorage.setItem('cardTheme', theme)
     else localStorage.removeItem('cardTheme')
@@ -141,6 +151,7 @@ export function useCustomization() {
   }
 
   return {
+    statType,
     theme,
     fontSize,
     hideAvatar,
@@ -149,6 +160,7 @@ export function useCustomization() {
     widthError,
     heightError,
     exportFormat,
+    setStatType,
     setTheme,
     setFontSize,
     setHideAvatar,
@@ -158,6 +170,7 @@ export function useCustomization() {
     handleCardHeightChange,
     handleCardHeightBlur,
     getCustomization: () => ({
+      statType,
       theme,
       fontSize,
       hideAvatar,

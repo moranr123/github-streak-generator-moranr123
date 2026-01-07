@@ -1,6 +1,9 @@
 // /src/controllers/streakController.js
 import { fetchGitHubData } from "../services/githubService.js";
+import { fetchUserLanguages } from "../services/githubLanguageService.js";
+import { getRepositoryCount } from "../services/githubRepositoryService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
+import { generateLanguagesCard, generateContributionsCard, generateRepositoriesCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
 import { cacheManager } from "../utils/cacheManager.js";
 import { getCardCacheKey, generateETag, CACHE_TTL } from "../utils/cacheUtils.js";
@@ -47,130 +50,78 @@ export const getStreak = async (req, res) => {
   }
 };
 
+// Helper function to generate colors from theme
+function generateColorsFromTheme(themeHex) {
+  const colors = {};
+  const themeColor = `#${themeHex}`;
+  
+  // Convert hex to RGB
+  const hexToRgb = (hex) => {
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return { r, g, b };
+  };
+  
+  // Convert RGB to hex
+  const rgbToHex = (r, g, b) => {
+    return `#${[r, g, b].map(x => {
+      const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }).join('')}`;
+  };
+  
+  // Darken color by reducing RGB values
+  const darken = (hex, factor) => {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHex(r * factor, g * factor, b * factor);
+  };
+  
+  // Lighten color by increasing RGB values towards white
+  const lighten = (hex, factor) => {
+    const { r, g, b } = hexToRgb(hex);
+    return rgbToHex(r + (255 - r) * factor, g + (255 - g) * factor, b + (255 - b) * factor);
+  };
+  
+  // Check if this is a white/light theme
+  const isLightTheme = themeHex.toLowerCase() === 'ffffff' || 
+                       (parseInt(themeHex.substring(0, 2), 16) > 240 && 
+                        parseInt(themeHex.substring(2, 4), 16) > 240 && 
+                        parseInt(themeHex.substring(4, 6), 16) > 240);
+  
+  if (isLightTheme) {
+    colors.background = '#ffffff';
+    colors.text = '#24292e';
+    colors.accent = '#0366d6';
+  } else {
+    colors.background = darken(themeHex, 0.12);
+    colors.text = lighten(themeHex, 0.85);
+    colors.accent = themeColor;
+  }
+  
+  return colors;
+}
+
 // PNG Card API
 export const getStreakCard = async (req, res) => {
   const { username } = req.params;
+  const statType = req.query.statType || 'streak'; // Default to streak
+  
   try {
-    const result = await fetchGitHubData(username);
-    const streakData = processStreakData(result);
-    
-    // Forward rate limit headers if available
-    setRateLimitHeaders(res, streakData.rateLimitInfo);
-
-    // Log card generation
-    logger.info({ 
-      username, 
-      current: streakData.current, 
-      longest: streakData.longest, 
-      total: streakData.total 
-    }, 'Card generated');
-
-    // Optional: fetch avatar from GitHub
     const avatarUrl = `https://github.com/${username}.png`;
-
-    // Extract theme parameter from query string and apply to multiple colors
-    const colors = {};
-    
-    // Check if custom background and text colors are provided
-    if (req.query.bgColor && req.query.textColor) {
-      const bgHex = req.query.bgColor.replace('#', '');
-      const textHex = req.query.textColor.replace('#', '');
-      
-      colors.background = `#${bgHex}`;
-      colors.backgroundGradient = `#${bgHex}`;
-      colors.text = `#${textHex}`;
-      colors.dateText = `#${textHex}`;
-      colors.currentStreak = `#${textHex}`;
-      colors.longestStreak = `#${textHex}`;
-      colors.totalCommits = `#${textHex}`;
-      colors.divider = `#${textHex}`;
-      colors.border = `#${textHex}`;
-      colors.avatarBorder = `#${textHex}`;
-      colors.accent = `#${textHex}`;
-    } else if (req.query.theme) {
-      const themeHex = req.query.theme.replace('#', '');
-      const themeColor = `#${themeHex}`;
-      
-      // Debug logging (development only)
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`Applying theme: ${themeColor}`);
-      }
-      
-      // Convert hex to RGB
-      const hexToRgb = (hex) => {
-        const r = parseInt(hex.substring(0, 2), 16);
-        const g = parseInt(hex.substring(2, 4), 16);
-        const b = parseInt(hex.substring(4, 6), 16);
-        return { r, g, b };
-      };
-      
-      // Convert RGB to hex
-      const rgbToHex = (r, g, b) => {
-        return `#${[r, g, b].map(x => {
-          const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
-          return hex.length === 1 ? '0' + hex : hex;
-        }).join('')}`;
-      };
-      
-      // Darken color by reducing RGB values
-      const darken = (hex, factor) => {
-        const { r, g, b } = hexToRgb(hex);
-        return rgbToHex(r * factor, g * factor, b * factor);
-      };
-      
-      // Lighten color by increasing RGB values towards white
-      const lighten = (hex, factor) => {
-        const { r, g, b } = hexToRgb(hex);
-        return rgbToHex(r + (255 - r) * factor, g + (255 - g) * factor, b + (255 - b) * factor);
-      };
-      
-      // Check if this is a white/light theme (ffffff or very light colors)
-      const isLightTheme = themeHex.toLowerCase() === 'ffffff' || 
-                           (parseInt(themeHex.substring(0, 2), 16) > 240 && 
-                            parseInt(themeHex.substring(2, 4), 16) > 240 && 
-                            parseInt(themeHex.substring(4, 6), 16) > 240);
-      
-      if (isLightTheme) {
-        // Light theme: white/light background with dark text
-        colors.background = '#ffffff'; // White background
-        colors.backgroundGradient = '#f8f9fa'; // Very light gray gradient
-        colors.border = '#e1e4e8'; // Light gray border
-        colors.text = '#24292e'; // Dark text
-        colors.dateText = '#586069'; // Medium gray for dates
-        colors.accent = '#0366d6'; // Blue accent
-        colors.avatarBorder = '#24292e'; // Dark border
-        colors.totalCommits = '#24292e'; // Dark text
-        colors.currentStreak = '#f97316'; // Orange for current streak
-        colors.longestStreak = '#24292e'; // Dark text
-        colors.divider = '#e1e4e8'; // Light gray divider
-      } else {
-        // Dark theme: dark background with light text
-        colors.background = darken(themeHex, 0.12); // Very dark background (12% of original)
-        colors.backgroundGradient = darken(themeHex, 0.18); // Slightly lighter gradient (18% of original)
-        colors.border = darken(themeHex, 0.35); // Medium dark border (35% of original)
-        colors.text = lighten(themeHex, 0.85); // Very light text (85% towards white)
-        colors.accent = themeColor; // Theme color for accents
-        colors.avatarBorder = themeColor;
-        colors.totalCommits = themeColor;
-        colors.currentStreak = lighten(themeHex, 0.85); // Light text
-        colors.longestStreak = lighten(themeHex, 0.85); // Light text
-      }
-      
-      // Debug logging (development only)
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Generated colors:', colors);
-      }
-    }
-
-    // Extract fontSize, hideAvatar, cardWidth, and cardHeight parameters
     const fontSize = req.query.fontSize || 'normal';
     const hideAvatar = req.query.hideAvatar === 'true';
     const cardWidth = parseInt(req.query.cardWidth) || 800;
     const cardHeight = parseInt(req.query.cardHeight) || 400;
+    const themeHex = (req.query.theme || 'ffffff').replace('#', '');
+    
+    // Generate colors from theme
+    const colors = generateColorsFromTheme(themeHex);
 
-    // Create customization object for cache key
+    // Create customization object for cache key (include statType)
     const customization = {
-      theme: req.query.theme || 'ffffff',
+      statType,
+      theme: themeHex,
       fontSize,
       hideAvatar,
       cardWidth,
@@ -194,25 +145,84 @@ export const getStreakCard = async (req, res) => {
     if (cachedBuffer && cachedBuffer.data) {
       // Convert base64 string back to buffer
       buffer = Buffer.from(cachedBuffer.data, 'base64');
-      logger.info({ username, cacheKey }, 'Card retrieved from cache');
+      logger.info({ username, statType, cacheKey }, 'Card retrieved from cache');
     } else {
-      // Generate new card
-      buffer = await generateStreakCard({ 
-        username, 
-        current: streakData.current, 
-        longest: streakData.longest, 
-        total: streakData.total, 
-        avatarUrl, 
-        colors,
-        fontSize,
-        hideAvatar,
-        cardWidth,
-        cardHeight,
-        currentRange: streakData.currentRange,
-        longestRange: streakData.longestRange,
-        firstContribution: streakData.firstContribution,
-        lastContribution: streakData.lastContribution
-      });
+      // Generate card based on stat type
+      if (statType === 'top_languages') {
+        const languageData = await fetchUserLanguages(username);
+        setRateLimitHeaders(res, languageData.rateLimitInfo);
+        
+        buffer = await generateLanguagesCard({
+          username,
+          languages: languageData.languages,
+          avatarUrl,
+          colors,
+          fontSize,
+          hideAvatar,
+          cardWidth,
+          cardHeight
+        });
+        
+        logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
+      } else if (statType === 'contributions') {
+        const result = await fetchGitHubData(username);
+        const streakData = processStreakData(result);
+        setRateLimitHeaders(res, streakData.rateLimitInfo);
+        
+        buffer = await generateContributionsCard({
+          username,
+          total: streakData.total,
+          avatarUrl,
+          colors,
+          fontSize,
+          hideAvatar,
+          cardWidth,
+          cardHeight
+        });
+        
+        logger.info({ username, total: streakData.total }, 'Contributions card generated');
+      } else if (statType === 'repositories') {
+        const repoCount = await getRepositoryCount(username);
+        // Note: getRepositoryCount doesn't return rateLimitInfo, so we'll skip setting headers
+        // In production, you might want to modify the service to return rate limit info
+        
+        buffer = await generateRepositoriesCard({
+          username,
+          repositoryCount: repoCount,
+          avatarUrl,
+          colors,
+          fontSize,
+          hideAvatar,
+          cardWidth,
+          cardHeight
+        });
+        
+        logger.info({ username, repositoryCount: repoCount }, 'Repositories card generated');
+      } else {
+        // Default: streak
+        const result = await fetchGitHubData(username);
+        const streakData = processStreakData(result);
+        setRateLimitHeaders(res, streakData.rateLimitInfo);
+
+        buffer = await generateStreakCard({ 
+          username, 
+          current: streakData.current, 
+          longest: streakData.longest, 
+          total: streakData.total, 
+          avatarUrl, 
+          colors,
+          fontSize,
+          hideAvatar,
+          cardWidth,
+          cardHeight,
+          currentRange: streakData.currentRange,
+          longestRange: streakData.longestRange,
+          firstContribution: streakData.firstContribution,
+          lastContribution: streakData.lastContribution
+        });
+        
+        logger.info({ username, current: streakData.current, longest: streakData.longest }, 'Streak card generated');
+      }
 
       // Cache the buffer as base64
       await cacheManager.set(cacheKey, {
@@ -220,14 +230,21 @@ export const getStreakCard = async (req, res) => {
         contentType: 'image/png'
       }, CACHE_TTL.CARD_IMAGE);
       
-      logger.info({ username, cacheKey }, 'Card generated and cached');
+      logger.info({ username, statType, cacheKey }, 'Card generated and cached');
     }
 
-    // Set HTTP cache headers
+    // Set HTTP cache headers and CORS headers for images
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "public, max-age=3600"); // 1 hour browser cache
     res.setHeader("ETag", `"${etag}"`);
     res.setHeader("Last-Modified", new Date().toUTCString());
+    
+    // Set CORS headers for image responses
+    const origin = req.headers.origin;
+    if (origin) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+    }
     
     res.send(buffer);
   } catch (err) {

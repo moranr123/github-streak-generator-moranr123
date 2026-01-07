@@ -77,6 +77,7 @@ function App() {
   useEffect(() => {
     const params = new URLSearchParams()
     if (username) params.set('username', username)
+    if (customization.statType && customization.statType !== 'streak') params.set('statType', customization.statType)
     if (customization.theme) params.set('theme', customization.theme)
     if (customization.fontSize !== 'normal') params.set('fontSize', customization.fontSize)
     if (customization.hideAvatar) params.set('hideAvatar', 'true')
@@ -96,7 +97,7 @@ function App() {
       : window.location.pathname
     
     window.history.replaceState({}, '', newUrl)
-  }, [username, customization.theme, customization.fontSize, customization.hideAvatar, customization.cardWidth, customization.cardHeight])
+  }, [username, customization.statType, customization.theme, customization.fontSize, customization.hideAvatar, customization.cardWidth, customization.cardHeight])
 
   // Handle card generation
   const handleGenerate = () => {
@@ -276,6 +277,13 @@ function App() {
                 isOnline={isOnline}
                 error={error}
                 inputRef={usernameInputRef}
+                statType={customization.statType}
+                onStatTypeChange={(value) => {
+                  customization.setStatType(value)
+                  if (username.trim()) {
+                    updateCardUrl(username, { ...customization.getCustomization(), statType: value })
+                  }
+                }}
               />
 
               <CustomizationPanel
