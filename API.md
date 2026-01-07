@@ -206,23 +206,39 @@ Get statistics about the API cache (if caching is enabled).
 **Response**:
 ```json
 {
-  "hits": 100,
-  "misses": 50,
-  "size": 25,
-  "hitRate": 0.67
+  "cache": {
+    "enabled": true,
+    "hits": 100,
+    "misses": 50,
+    "sets": 100,
+    "deletes": 5,
+    "hitRate": 0.67,
+    "total": 150
+  },
+  "timestamp": "2024-01-01T00:00:00.000Z"
 }
 ```
 
 **Response Fields**:
+- `enabled` (boolean): Whether caching is enabled
 - `hits` (number): Number of cache hits
 - `misses` (number): Number of cache misses
-- `size` (number): Current cache size
+- `sets` (number): Number of cache sets
+- `deletes` (number): Number of cache deletions
 - `hitRate` (number): Cache hit rate (0-1)
+- `total` (number): Total requests (hits + misses)
 
 **Example Request**:
 ```bash
 curl http://localhost:5000/api/streak/cache/stats
 ```
+
+**How to Verify Cache is Working:**
+1. Check `enabled` field - should be `true` if Redis is configured
+2. Make a request to `/api/streak/:username`
+3. Check stats again - `sets` should increase
+4. Make the same request again - `hits` should increase
+5. Cached requests should be faster than uncached requests
 
 ---
 

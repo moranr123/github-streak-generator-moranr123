@@ -10,6 +10,7 @@
     "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage"
   },
   "dependencies": {
+    "@upstash/redis": "^1.36.0",
     "axios": "^1.6.0",
     "canvas": "^3.2.0",
     "compression": "^1.8.1",

@@ -1,8 +1,27 @@
 import axios from "axios";
 import { logger } from "../middleware/logger.js";
-// Cache removed - no longer using caching
+import { cacheManager } from "../utils/cacheManager.js";
+import { getGitHubDataCacheKey, CACHE_TTL } from "../utils/cacheUtils.js";
 
 export const fetchGitHubData = async (username) => {
+  // Check cache first
+  const cacheKey = getGitHubDataCacheKey(username);
+  if (cacheManager.isEnabled()) {
+    const cachedData = await cacheManager.get(cacheKey);
+    if (cachedData) {
+      logger.info({ username }, 'GitHub data retrieved from cache');
+      // Process cached data to match return format
+      const weeks = cachedData.user.contributionsCollection.contributionCalendar.weeks;
+      const days = weeks.flatMap(week =>
+        week.contributionDays.map(day => ({
+          date: day.date,
+          count: day.contributionCount,
+        }))
+      );
+      return { days };
+    }
+  }
+
   // Check if GITHUB_TOKEN is set
   if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {
     const tokenError = new Error('GITHUB_TOKEN is not configured. Please set it in your .env file.');
@@ -64,7 +83,15 @@ export const fetchGitHubData = async (username) => {
       throw notFoundError;
     }
 
-    const weeks = data.data.user.contributionsCollection.contributionCalendar.weeks;
+    const fullData = data.data;
+
+    // Cache the full data object
+    if (cacheManager.isEnabled()) {
+      await cacheManager.set(cacheKey, fullData, CACHE_TTL.GITHUB_DATA);
+      logger.info({ username }, 'GitHub data cached');
+    }
+
+    const weeks = fullData.user.contributionsCollection.contributionCalendar.weeks;
 
     // Flatten weeks to daily list
     const days = weeks.flatMap(week =>
