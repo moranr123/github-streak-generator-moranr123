@@ -96,13 +96,13 @@ function App() {
       }
     }
     
-    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 800)
-    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 400)
+    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 600)
+    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 200)
     
-    if (widthValue !== 800 && !isNaN(widthValue)) {
+    if (widthValue !== 600 && !isNaN(widthValue)) {
       params.set('cardWidth', widthValue.toString())
     }
-    if (heightValue !== 400 && !isNaN(heightValue)) {
+    if (heightValue !== 200 && !isNaN(heightValue)) {
       params.set('cardHeight', heightValue.toString())
     }
     
@@ -216,10 +216,10 @@ function App() {
         params.set('displaySections', enabledSections)
       }
     }
-    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 800)
-    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 400)
-    if (widthValue !== 800 && !isNaN(widthValue)) params.set('cardWidth', widthValue.toString())
-    if (heightValue !== 400 && !isNaN(heightValue)) params.set('cardHeight', heightValue.toString())
+    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 600)
+    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 200)
+    if (widthValue !== 600 && !isNaN(widthValue)) params.set('cardWidth', widthValue.toString())
+    if (heightValue !== 200 && !isNaN(heightValue)) params.set('cardHeight', heightValue.toString())
     
     return `${window.location.origin}${window.location.pathname}?${params.toString()}`
   }
@@ -299,17 +299,6 @@ function App() {
                 statType={customization.statType}
                 onStatTypeChange={(value) => {
                   customization.setStatType(value)
-                  // Set optimal dimensions for contribution graph
-                  if (value === 'contribution_graph') {
-                    const currentWidth = typeof customization.cardWidth === 'number' ? customization.cardWidth : parseInt(customization.cardWidth) || 800
-                    const currentHeight = typeof customization.cardHeight === 'number' ? customization.cardHeight : parseInt(customization.cardHeight) || 400
-                    if (currentWidth < 1000) {
-                      customization.handleCardWidthBlur({ target: { value: '1200' } })
-                    }
-                    if (currentHeight < 300) {
-                      customization.handleCardHeightBlur({ target: { value: '350' } })
-                    }
-                  }
                   if (username.trim()) {
                     updateCardUrl(username, { ...customization.getCustomization(), statType: value })
                   }

@@ -1,8 +1,8 @@
 // /src/controllers/streakController.js
-import { fetchGitHubData, fetchContributionGraphData } from "../services/githubService.js";
+import { fetchGitHubData } from "../services/githubService.js";
 import { fetchUserLanguages } from "../services/githubLanguageService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
-import { generateLanguagesCard, generateContributionGraphCard } from "../utils/statsCard.js";
+import { generateLanguagesCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
 // Cache removed - no longer using caching
 import { processStreakData } from "../utils/streakUtils.js";
@@ -122,8 +122,8 @@ export const getStreakCard = async (req, res) => {
     const avatarUrl = `https://github.com/${username}.png`;
     const fontSize = req.query.fontSize || 'normal';
     const hideAvatar = req.query.hideAvatar === 'true';
-    const cardWidth = parseInt(req.query.cardWidth) || 800;
-    const cardHeight = parseInt(req.query.cardHeight) || 400;
+    const cardWidth = parseInt(req.query.cardWidth) || 600;
+    const cardHeight = parseInt(req.query.cardHeight) || 200;
     const themeHex = (req.query.theme || 'ffffff').replace('#', '');
     
     // Generate colors from theme
@@ -146,21 +146,6 @@ export const getStreakCard = async (req, res) => {
       });
       
       logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
-    } else if (statType === 'contribution_graph') {
-        const graphData = await fetchContributionGraphData(username);
-        
-        buffer = await generateContributionGraphCard({
-        username,
-        weeks: graphData.weeks,
-        avatarUrl,
-        colors,
-        fontSize,
-        hideAvatar,
-        cardWidth,
-        cardHeight
-      });
-      
-      logger.info({ username, weekCount: graphData.weeks.length }, 'Contribution graph card generated');
     } else {
         // Default: streak
         const result = await fetchGitHubData(username);

@@ -40,14 +40,14 @@ export function generateCardUrl(apiBase, username, customization) {
     }
   }
   
-  const widthValue = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)
-  const heightValue = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 400)
+  const widthValue = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 600)
+  const heightValue = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 200)
   
-  if (widthValue && !isNaN(widthValue) && widthValue !== 800) {
+  if (widthValue && !isNaN(widthValue) && widthValue !== 600) {
     params.append('cardWidth', widthValue.toString())
   }
   
-  if (heightValue && !isNaN(heightValue) && heightValue !== 400) {
+  if (heightValue && !isNaN(heightValue) && heightValue !== 200) {
     params.append('cardHeight', heightValue.toString())
   }
   

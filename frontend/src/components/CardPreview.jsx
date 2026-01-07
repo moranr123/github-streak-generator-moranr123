@@ -43,10 +43,8 @@ export function CardPreview({
     )
   }
 
-  const isContributionGraph = customization?.statType === 'contribution_graph';
-  
   return (
-    <div className={`card-preview ${isContributionGraph ? 'contribution-graph' : ''}`} style={{ position: 'relative' }}>
+    <div className="card-preview" style={{ position: 'relative' }}>
       {imageLoading && (
         <div className="skeleton-card" role="status" aria-live="polite" aria-label="Loading card">
           <div className="skeleton-header">

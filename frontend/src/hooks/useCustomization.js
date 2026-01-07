@@ -28,12 +28,12 @@ export function useCustomization() {
   
   const [cardWidth, setCardWidth] = useState(() => {
     const saved = localStorage.getItem('cardWidth')
-    return saved ? parseInt(saved) : 800
+    return saved ? parseInt(saved) : 600
   })
   
   const [cardHeight, setCardHeight] = useState(() => {
     const saved = localStorage.getItem('cardHeight')
-    return saved ? parseInt(saved) : 400
+    return saved ? parseInt(saved) : 200
   })
   
   const [widthError, setWidthError] = useState('')
@@ -110,11 +110,11 @@ export function useCustomization() {
     let newWidth = parseInt(value)
     let error = ''
     
-    const currentWidth = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)
+    const currentWidth = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 600)
     
     if (value === '' || isNaN(newWidth) || newWidth < 1) {
       error = 'Please enter a valid width'
-      newWidth = 800
+      newWidth = 600
     } else {
       const validation = validateCardWidth(newWidth)
       if (!validation.valid) {
@@ -150,11 +150,11 @@ export function useCustomization() {
     let newHeight = parseInt(value)
     let error = ''
     
-    const currentHeight = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 400)
+    const currentHeight = typeof cardHeight === 'number' ? cardHeight : (typeof cardHeight === 'string' ? parseInt(cardHeight) : 200)
     
     if (value === '' || isNaN(newHeight) || newHeight < 1) {
       error = 'Please enter a valid height'
-      newHeight = 400
+      newHeight = 200
     } else {
       const validation = validateCardHeight(newHeight)
       if (!validation.valid) {

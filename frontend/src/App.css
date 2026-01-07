@@ -55,7 +55,7 @@ body {
 }
 
 .container {
-  width: 60%;
+  width: 80%;
   margin: 0 auto;
   background: var(--bg-secondary);
   border-radius: 8px;
@@ -412,52 +412,6 @@ header p {
   border-radius: 4px;
 }
 
-/* Make contribution graph container scrollable */
-.card-preview.contribution-graph {
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-color) var(--bg-tertiary);
-}
-
-.card-preview.contribution-graph::-webkit-scrollbar {
-  height: 8px;
-}
-
-.card-preview.contribution-graph::-webkit-scrollbar-track {
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-}
-
-.card-preview.contribution-graph::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 4px;
-}
-
-.card-preview.contribution-graph::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
-}
-
-/* Make contribution graph images responsive */
-.card-preview.contribution-graph img {
-  min-width: 1000px;
-  width: auto;
-  max-width: none;
-  height: auto;
-}
-
-/* Responsive adjustments for smaller screens */
-@media (max-width: 768px) {
-  .card-preview.contribution-graph {
-    padding: 16px;
-  }
-  
-  .card-preview.contribution-graph img {
-    min-width: 800px;
-  }
-}
-
 .card-image {
   opacity: 0;
   transform: translateY(10px);
@@ -791,6 +745,7 @@ header p {
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 10px;
+  align-items: center;
 }
 
 .social-button {
@@ -807,6 +762,8 @@ header p {
   background: var(--bg-secondary);
   color: var(--text-primary);
   white-space: nowrap;
+  width: auto;
+  flex-shrink: 0;
 }
 
 .social-button:hover {
@@ -875,6 +832,21 @@ header p {
   background: #6c757d;
   color: white;
   border-color: #6c757d;
+}
+
+.social-button.download-button {
+  background: #10b981;
+  color: white;
+  border-color: #10b981;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.social-button.download-button:hover {
+  background: #059669;
+  border-color: #059669;
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .social-button.native {
