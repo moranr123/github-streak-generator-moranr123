@@ -1,4 +1,5 @@
 import axios from "axios";
+import { logger } from "../middleware/logger.js";
 
 export const fetchGitHubData = async (username) => {
   const query = `

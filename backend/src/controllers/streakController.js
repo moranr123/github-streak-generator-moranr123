@@ -2,6 +2,7 @@
 import { fetchGitHubData } from "../services/githubService.js";
 import { calculateStreaks } from "../utils/streakCalculator.js";
 import { generateStreakCard } from "../utils/streakCard.js";
+import { logger } from "../middleware/logger.js";
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
@@ -50,15 +51,15 @@ export const getStreak = async (req, res) => {
       ? contributionDays[contributionDays.length - 1].date 
       : null;
 
-    // Debug logging
-    console.log(`Streak calculation for ${username}: current=${current}, longest=${longest}, total=${total}, days=${contributions.length}`);
+    // Log streak calculation
+    logger.info({ username, current, longest, total, daysCount: contributions.length }, 'Streak calculated');
 
     const jsonResponse = { username, current, longest, total };
 
     res.json(jsonResponse);
   } catch (err) {
     // Log error for debugging but don't expose to user
-    console.error(`Error fetching streak for ${username}:`, err.message);
+    logger.error({ username, error: err.message, stack: err.stack }, 'Error fetching streak');
     // Check for specific error types
     if (err.statusCode === 404 || err.response?.status === 404) {
       res.status(404).json({ error: "User not found" });
@@ -118,10 +119,8 @@ export const getStreakCard = async (req, res) => {
       ? contributionDays[contributionDays.length - 1].date 
       : null;
 
-    // Log for monitoring (can be removed in production)
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Card generation for ${username}: current=${current}, longest=${longest}, total=${total}`);
-    }
+    // Log card generation
+    logger.info({ username, current, longest, total }, 'Card generated');
 
     // Optional: fetch avatar from GitHub
     const avatarUrl = `https://github.com/${username}.png`;
@@ -247,7 +246,7 @@ export const getStreakCard = async (req, res) => {
     res.send(buffer);
   } catch (err) {
     // Log error for debugging but don't expose to user
-    console.error(`Error generating card for ${username}:`, err.message);
+    logger.error({ username, error: err.message, stack: err.stack }, 'Error generating card');
     // Check for specific error types
     if (err.statusCode === 404 || err.response?.status === 404) {
       res.status(404).json({ error: "User not found" });
