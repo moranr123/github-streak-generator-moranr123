@@ -16,7 +16,8 @@ export async function generateStreakCard({
   currentRange = null,
   longestRange = null,
   firstContribution = null,
-  lastContribution = null
+  lastContribution = null,
+  displaySections = { total: true, current: true, longest: true }
 }) {
   // Default colors - dark purple theme
   const defaultColors = {
@@ -153,163 +154,200 @@ export async function generateStreakCard({
     return `${months[date.getUTCMonth()]} ${date.getUTCDate()}`;
   };
 
+  // Determine which sections to display
+  const showTotal = displaySections.total !== false;
+  const showCurrent = displaySections.current !== false;
+  const showLongest = displaySections.longest !== false;
+  
+  const sectionsToShow = [showTotal, showCurrent, showLongest].filter(Boolean).length;
+  const sectionCount = sectionsToShow || 1; // At least 1 section
+  
   // Stats container - centered vertically (below username/avatar)
   const statsY = (hideAvatar ? 80 : 140) * vScale;
   const statsHeight = height - statsY - 40 * vScale;
-  const sectionWidth = (width - 120 * hScale) / 3; // Three equal sections with padding
+  const sectionWidth = (width - 120 * hScale) / sectionCount; // Dynamic section width based on count
   const sectionPadding = 40 * hScale;
   const sectionCenterY = statsY + statsHeight / 2;
+  
+  // Calculate starting X position to center sections
+  const totalWidth = (sectionWidth * sectionCount) + (sectionPadding * (sectionCount - 1));
+  const startX = (width - totalWidth) / 2;
 
+  // Track current section position
+  let currentSectionIndex = 0;
+  
   // Left Section: Total Contributions
-  const leftX = sectionPadding;
-  const leftCenterX = leftX + sectionWidth / 2;
-  
-  // Calculate vertical spacing for left section
-  const leftNumberY = sectionCenterY - 50 * vScale;
-  const leftLabelY = sectionCenterY + 10 * vScale;
-  const leftDateY = sectionCenterY + 35 * vScale;
-  
-  // Total number
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  // Force color to be dark for light backgrounds
-  const totalColor = isLightBg ? '#24292e' : cardColors.totalCommits;
-  ctx.fillStyle = totalColor;
-  ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
-  const totalText = total.toLocaleString();
-  const totalTextWidth = ctx.measureText(totalText).width;
-  
-  logger.info({
-    fillStyle: ctx.fillStyle,
-    font: ctx.font,
-    largeNumberSize,
-    text: totalText,
-    position: { x: leftCenterX, y: leftNumberY },
-    cardColorTotal: cardColors.totalCommits,
-    isLightBg,
-    forcedColor: totalColor
-  }, 'Drawing total contributions');
-  
-  ctx.fillText(totalText, leftCenterX, leftNumberY);
-  
-  // Label
-  ctx.fillStyle = cardColors.text;
-  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
-  const totalLabel = "Total Contributions";
-  ctx.textBaseline = 'top';
-  ctx.fillText(totalLabel, leftCenterX, leftLabelY);
-  
-  // Date range
-  if (firstContribution && lastContribution) {
-    ctx.fillStyle = cardColors.dateText;
-    ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
-    const dateRange = `${formatDate(firstContribution)} - Present`;
-    ctx.fillText(dateRange, leftCenterX, leftDateY);
+  if (showTotal) {
+    const leftX = startX + (currentSectionIndex * (sectionWidth + sectionPadding));
+    const leftCenterX = leftX + sectionWidth / 2;
+    
+    // Calculate vertical spacing for left section
+    const leftNumberY = sectionCenterY - 50 * vScale;
+    const leftLabelY = sectionCenterY + 10 * vScale;
+    const leftDateY = sectionCenterY + 35 * vScale;
+    
+    // Total number
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Force color to be dark for light backgrounds
+    const totalColor = isLightBg ? '#24292e' : cardColors.totalCommits;
+    ctx.fillStyle = totalColor;
+    ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
+    const totalText = total.toLocaleString();
+    
+    logger.info({
+      fillStyle: ctx.fillStyle,
+      font: ctx.font,
+      largeNumberSize,
+      text: totalText,
+      position: { x: leftCenterX, y: leftNumberY },
+      cardColorTotal: cardColors.totalCommits,
+      isLightBg,
+      forcedColor: totalColor
+    }, 'Drawing total contributions');
+    
+    ctx.fillText(totalText, leftCenterX, leftNumberY);
+    
+    // Label
+    ctx.fillStyle = cardColors.text;
+    ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+    const totalLabel = "Total Contributions";
+    ctx.textBaseline = 'top';
+    ctx.fillText(totalLabel, leftCenterX, leftLabelY);
+    
+    // Date range
+    if (firstContribution && lastContribution) {
+      ctx.fillStyle = cardColors.dateText;
+      ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+      const dateRange = `${formatDate(firstContribution)} - Present`;
+      ctx.fillText(dateRange, leftCenterX, leftDateY);
+    }
+    
+    currentSectionIndex++;
   }
 
   // Middle Section: Current Streak (with circle)
-  const middleX = sectionPadding + sectionWidth;
-  const middleCenterX = middleX + sectionWidth / 2;
-  const circleY = sectionCenterY;
-  const circleRadius = 50 * sizeMultiplier;
-  
-  // Draw circle outline
-  ctx.strokeStyle = cardColors.text;
-  ctx.lineWidth = 3 * sizeMultiplier;
-  ctx.beginPath();
-  ctx.arc(middleCenterX, circleY, circleRadius, 0, Math.PI * 2);
-  ctx.stroke();
-  
-  // Flame icon above circle
-  ctx.fillStyle = cardColors.currentStreak;
-  ctx.font = `bold ${Math.round(32 * combinedMultiplier)}px 'Segoe UI', Arial, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-      ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15 * vScale);
-  
-  // Number inside circle
-  ctx.fillStyle = cardColors.currentStreak;
-  ctx.font = `bold ${circleNumberSize}px 'Segoe UI', Arial, sans-serif`;
-  const currentText = `${current}`;
-  ctx.textBaseline = 'middle';
-  ctx.fillText(currentText, middleCenterX, circleY);
-  
-  // Label below circle
-  ctx.fillStyle = cardColors.currentStreak;
-  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
-  const currentLabel = "Current Streak";
-  ctx.textBaseline = 'top';
-      ctx.fillText(currentLabel, middleCenterX, circleY + circleRadius + 20 * vScale);
-      
-      // Date range
-      if (currentRange && currentRange.start && currentRange.end) {
-        ctx.fillStyle = cardColors.dateText;
-        ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
-        const dateRange = `${formatDateShort(currentRange.start)} - ${formatDateShort(currentRange.end)}`;
-        ctx.fillText(dateRange, middleCenterX, circleY + circleRadius + 40 * vScale);
+  if (showCurrent) {
+    const middleX = startX + (currentSectionIndex * (sectionWidth + sectionPadding));
+    const middleCenterX = middleX + sectionWidth / 2;
+    const circleY = sectionCenterY;
+    const circleRadius = 50 * sizeMultiplier;
+    
+    // Draw circle outline
+    ctx.strokeStyle = cardColors.text;
+    ctx.lineWidth = 3 * sizeMultiplier;
+    ctx.beginPath();
+    ctx.arc(middleCenterX, circleY, circleRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    
+    // Flame icon above circle
+    ctx.fillStyle = cardColors.currentStreak;
+    ctx.font = `bold ${Math.round(32 * combinedMultiplier)}px 'Segoe UI', Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15 * vScale);
+    
+    // Number inside circle
+    ctx.fillStyle = cardColors.currentStreak;
+    ctx.font = `bold ${circleNumberSize}px 'Segoe UI', Arial, sans-serif`;
+    const currentText = `${current}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(currentText, middleCenterX, circleY);
+    
+    // Label below circle
+    ctx.fillStyle = cardColors.currentStreak;
+    ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+    const currentLabel = "Current Streak";
+    ctx.textBaseline = 'top';
+    ctx.fillText(currentLabel, middleCenterX, circleY + circleRadius + 20 * vScale);
+    
+    // Date range
+    if (currentRange && currentRange.start && currentRange.end) {
+      ctx.fillStyle = cardColors.dateText;
+      ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+      const dateRange = `${formatDateShort(currentRange.start)} - ${formatDateShort(currentRange.end)}`;
+      ctx.fillText(dateRange, middleCenterX, circleY + circleRadius + 40 * vScale);
+    }
+    
+    currentSectionIndex++;
   }
 
   // Right Section: Longest Streak
-  const rightX = sectionPadding + sectionWidth * 2;
-  const rightCenterX = rightX + sectionWidth / 2;
-  
-  // Calculate vertical spacing for right section (same as left)
-  const rightNumberY = sectionCenterY - 50 * vScale;
-  const rightLabelY = sectionCenterY + 10 * vScale;
-  const rightDateY = sectionCenterY + 35 * vScale;
-  
-  // Longest number
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  // Force color to be dark for light backgrounds
-  const longestColor = isLightBg ? '#24292e' : cardColors.longestStreak;
-  ctx.fillStyle = longestColor;
-  ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
-  const longestText = `${longest}`;
-  
-  logger.info({
-    fillStyle: ctx.fillStyle,
-    font: ctx.font,
-    largeNumberSize,
-    text: longestText,
-    position: { x: rightCenterX, y: rightNumberY },
-    cardColorLongest: cardColors.longestStreak,
-    isLightBg,
-    forcedColor: longestColor
-  }, 'Drawing longest streak');
-  
-  ctx.fillText(longestText, rightCenterX, rightNumberY);
-  
-  // Label
-  ctx.fillStyle = cardColors.text;
-  ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
-  const longestLabel = "Longest Streak";
-  ctx.textBaseline = 'top';
-  ctx.fillText(longestLabel, rightCenterX, rightLabelY);
-  
-  // Date range
-  if (longestRange && longestRange.start && longestRange.end) {
-    ctx.fillStyle = cardColors.dateText;
-    ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
-    const dateRange = `${formatDateShort(longestRange.start)} - ${formatDateShort(longestRange.end)}`;
-    ctx.fillText(dateRange, rightCenterX, rightDateY);
+  if (showLongest) {
+    const rightX = startX + (currentSectionIndex * (sectionWidth + sectionPadding));
+    const rightCenterX = rightX + sectionWidth / 2;
+    
+    // Calculate vertical spacing for right section (same as left)
+    const rightNumberY = sectionCenterY - 50 * vScale;
+    const rightLabelY = sectionCenterY + 10 * vScale;
+    const rightDateY = sectionCenterY + 35 * vScale;
+    
+    // Longest number
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Force color to be dark for light backgrounds
+    const longestColor = isLightBg ? '#24292e' : cardColors.longestStreak;
+    ctx.fillStyle = longestColor;
+    ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
+    const longestText = `${longest}`;
+    
+    logger.info({
+      fillStyle: ctx.fillStyle,
+      font: ctx.font,
+      largeNumberSize,
+      text: longestText,
+      position: { x: rightCenterX, y: rightNumberY },
+      cardColorLongest: cardColors.longestStreak,
+      isLightBg,
+      forcedColor: longestColor
+    }, 'Drawing longest streak');
+    
+    ctx.fillText(longestText, rightCenterX, rightNumberY);
+    
+    // Label
+    ctx.fillStyle = cardColors.text;
+    ctx.font = `${labelSize}px 'Segoe UI', Arial, sans-serif`;
+    const longestLabel = "Longest Streak";
+    ctx.textBaseline = 'top';
+    ctx.fillText(longestLabel, rightCenterX, rightLabelY);
+    
+    // Date range
+    if (longestRange && longestRange.start && longestRange.end) {
+      ctx.fillStyle = cardColors.dateText;
+      ctx.font = `${dateSize}px 'Segoe UI', Arial, sans-serif`;
+      const dateRange = `${formatDateShort(longestRange.start)} - ${formatDateShort(longestRange.end)}`;
+      ctx.fillText(dateRange, rightCenterX, rightDateY);
+    }
+    
+    currentSectionIndex++;
   }
   
   // Reset text alignment
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
-  // Vertical divider lines
-  ctx.strokeStyle = cardColors.divider;
-  ctx.lineWidth = 1 * sizeMultiplier;
-  ctx.beginPath();
-  ctx.moveTo(middleX, statsY + 20 * vScale);
-  ctx.lineTo(middleX, statsY + statsHeight - 20 * vScale);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(rightX, statsY + 20 * vScale);
-  ctx.lineTo(rightX, statsY + statsHeight - 20 * vScale);
-  ctx.stroke();
+  // Vertical divider lines (only between sections)
+  if (sectionsToShow > 1) {
+    ctx.strokeStyle = cardColors.divider;
+    ctx.lineWidth = 1 * sizeMultiplier;
+    
+    let dividerIndex = 0;
+    if (showTotal && showCurrent) {
+      const dividerX = startX + sectionWidth + (dividerIndex * (sectionWidth + sectionPadding));
+      ctx.beginPath();
+      ctx.moveTo(dividerX, statsY + 20 * vScale);
+      ctx.lineTo(dividerX, statsY + statsHeight - 20 * vScale);
+      ctx.stroke();
+      dividerIndex++;
+    }
+    if ((showTotal && showLongest) || (showCurrent && showLongest)) {
+      const dividerX = startX + (sectionWidth * (dividerIndex + 1)) + (dividerIndex * sectionPadding);
+      ctx.beginPath();
+      ctx.moveTo(dividerX, statsY + 20 * vScale);
+      ctx.lineTo(dividerX, statsY + statsHeight - 20 * vScale);
+      ctx.stroke();
+    }
+  }
 
   return canvas.toBuffer("image/png");
 }

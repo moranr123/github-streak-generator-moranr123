@@ -85,6 +85,16 @@ function App() {
     if (customization.theme) params.set('theme', customization.theme)
     if (customization.fontSize !== 'normal') params.set('fontSize', customization.fontSize)
     if (customization.hideAvatar) params.set('hideAvatar', 'true')
+    if (customization.statType === 'streak' && customization.displaySections && typeof customization.displaySections === 'object') {
+      const enabledSections = Object.entries(customization.displaySections)
+        .filter(([_, enabled]) => enabled)
+        .map(([key, _]) => key)
+        .join(',')
+      
+      if (enabledSections && enabledSections !== 'total,current,longest') {
+        params.set('displaySections', enabledSections)
+      }
+    }
     
     const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 800)
     const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 400)
@@ -192,9 +202,20 @@ function App() {
   const getShareUrl = () => {
     const params = new URLSearchParams()
     if (username) params.set('username', username)
+    if (customization.statType && customization.statType !== 'streak') params.set('statType', customization.statType)
     if (customization.theme) params.set('theme', customization.theme)
     if (customization.fontSize !== 'normal') params.set('fontSize', customization.fontSize)
     if (customization.hideAvatar) params.set('hideAvatar', 'true')
+    if (customization.statType === 'streak' && customization.displaySections && typeof customization.displaySections === 'object') {
+      const enabledSections = Object.entries(customization.displaySections)
+        .filter(([_, enabled]) => enabled)
+        .map(([key, _]) => key)
+        .join(',')
+      
+      if (enabledSections && enabledSections !== 'total,current,longest') {
+        params.set('displaySections', enabledSections)
+      }
+    }
     const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 800)
     const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 400)
     if (widthValue !== 800 && !isNaN(widthValue)) params.set('cardWidth', widthValue.toString())
@@ -278,6 +299,17 @@ function App() {
                 statType={customization.statType}
                 onStatTypeChange={(value) => {
                   customization.setStatType(value)
+                  // Set optimal dimensions for contribution graph
+                  if (value === 'contribution_graph') {
+                    const currentWidth = typeof customization.cardWidth === 'number' ? customization.cardWidth : parseInt(customization.cardWidth) || 800
+                    const currentHeight = typeof customization.cardHeight === 'number' ? customization.cardHeight : parseInt(customization.cardHeight) || 400
+                    if (currentWidth < 1000) {
+                      customization.handleCardWidthBlur({ target: { value: '1200' } })
+                    }
+                    if (currentHeight < 300) {
+                      customization.handleCardHeightBlur({ target: { value: '350' } })
+                    }
+                  }
                   if (username.trim()) {
                     updateCardUrl(username, { ...customization.getCustomization(), statType: value })
                   }
@@ -285,12 +317,14 @@ function App() {
               />
 
               <CustomizationPanel
+                statType={customization.statType}
                 theme={customization.theme}
                 fontSize={customization.fontSize}
                 hideAvatar={customization.hideAvatar}
                 cardWidth={customization.cardWidth}
                 cardHeight={customization.cardHeight}
                 exportFormat={customization.exportFormat}
+                displaySections={customization.displaySections}
                 widthError={customization.widthError}
                 heightError={customization.heightError}
                 onThemeChange={handleThemeChange}
@@ -301,6 +335,12 @@ function App() {
                 onCardHeightChange={customization.handleCardHeightChange}
                 onCardHeightBlur={handleCardHeightBlur}
                 onExportFormatChange={(e) => customization.setExportFormat(e.target.value)}
+                onDisplaySectionsChange={(newSections) => {
+                  customization.setDisplaySections(newSections)
+                  if (username.trim() && customization.statType === 'streak') {
+                    updateCardUrl(username, { ...customization.getCustomization(), displaySections: newSections })
+                  }
+                }}
               />
 
               <button 

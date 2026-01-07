@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { validateCardWidth, validateCardHeight } from '../utils/validation'
-import { STAT_TYPES } from '../utils/constants'
+import { STAT_TYPES, DISPLAY_SECTIONS } from '../utils/constants'
 
 /**
  * Custom hook for card customization state management
@@ -39,6 +39,21 @@ export function useCustomization() {
   const [widthError, setWidthError] = useState('')
   const [heightError, setHeightError] = useState('')
   const [exportFormat, setExportFormat] = useState('png')
+  const [displaySections, setDisplaySections] = useState(() => {
+    const saved = localStorage.getItem('displaySections')
+    if (saved) {
+      try {
+        return JSON.parse(saved)
+      } catch {
+        // Fallback to default if parsing fails
+      }
+    }
+    return {
+      [DISPLAY_SECTIONS.TOTAL]: true,
+      [DISPLAY_SECTIONS.CURRENT]: true,
+      [DISPLAY_SECTIONS.LONGEST]: true
+    }
+  })
 
   // Save to localStorage when values change
   useEffect(() => {
@@ -69,6 +84,10 @@ export function useCustomization() {
       localStorage.setItem('cardHeight', cardHeight.toString())
     }
   }, [cardHeight])
+
+  useEffect(() => {
+    localStorage.setItem('displaySections', JSON.stringify(displaySections))
+  }, [displaySections])
 
   const handleCardWidthChange = (e) => {
     const value = e.target.value
@@ -160,11 +179,13 @@ export function useCustomization() {
     widthError,
     heightError,
     exportFormat,
+    displaySections,
     setStatType,
     setTheme,
     setFontSize,
     setHideAvatar,
     setExportFormat,
+    setDisplaySections,
     handleCardWidthChange,
     handleCardWidthBlur,
     handleCardHeightChange,
@@ -175,7 +196,8 @@ export function useCustomization() {
       fontSize,
       hideAvatar,
       cardWidth,
-      cardHeight
+      cardHeight,
+      displaySections
     })
   }
 }

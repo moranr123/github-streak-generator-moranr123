@@ -6,7 +6,7 @@
  * @returns {string} Generated card URL
  */
 export function generateCardUrl(apiBase, username, customization) {
-  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight } = customization
+  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight, displaySections } = customization
   const params = new URLSearchParams()
   
   // Add statType if not default (streak)
@@ -25,6 +25,19 @@ export function generateCardUrl(apiBase, username, customization) {
   
   if (hideAvatar) {
     params.append('hideAvatar', 'true')
+  }
+  
+  // Add displaySections for streak cards
+  if (statType === 'streak' && displaySections && typeof displaySections === 'object') {
+    const enabledSections = Object.entries(displaySections)
+      .filter(([_, enabled]) => enabled)
+      .map(([key, _]) => key)
+      .join(',')
+    
+    // Only add if not all sections are enabled (default)
+    if (enabledSections && enabledSections !== 'total,current,longest') {
+      params.append('displaySections', enabledSections)
+    }
   }
   
   const widthValue = typeof cardWidth === 'number' ? cardWidth : (typeof cardWidth === 'string' ? parseInt(cardWidth) : 800)

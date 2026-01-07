@@ -114,3 +114,100 @@ export const fetchGitHubData = async (username) => {
     throw genericError;
   }
 };
+
+/**
+ * Fetch GitHub contribution calendar weeks data for graph visualization
+ */
+export const fetchContributionGraphData = async (username) => {
+  // Check if GITHUB_TOKEN is set
+  if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {
+    const tokenError = new Error('GITHUB_TOKEN is not configured. Please set it in your .env file.');
+    tokenError.statusCode = 500;
+    logger.error({ error: tokenError.message }, 'GitHub token not configured');
+    throw tokenError;
+  }
+
+  const query = `
+    query($username: String!) {
+      user(login: $username) {
+        contributionsCollection {
+          contributionCalendar {
+            weeks {
+              contributionDays {
+                date
+                contributionCount
+              }
+            }
+          }
+        }
+      }
+    }
+  `;
+
+  const variables = { username };
+
+  try {
+    const response = await axios.post(
+      "https://api.github.com/graphql",
+      { query, variables },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+        },
+      }
+    );
+    
+    const { data } = response;
+
+    if (data.errors) {
+      const error = data.errors[0];
+      if (error.type === 'NOT_FOUND') {
+        const notFoundError = new Error('User not found');
+        notFoundError.statusCode = 404;
+        throw notFoundError;
+      }
+      const graphqlError = new Error('GitHub API error');
+      graphqlError.statusCode = 400;
+      throw graphqlError;
+    }
+
+    if (!data.data || !data.data.user) {
+      const notFoundError = new Error('User not found');
+      notFoundError.statusCode = 404;
+      throw notFoundError;
+    }
+
+    const weeks = data.data.user.contributionsCollection.contributionCalendar.weeks;
+
+    return { weeks };
+  } catch (err) {
+    logger.error({ 
+      error: err.message, 
+      status: err.response?.status,
+      data: err.response?.data,
+      stack: err.stack 
+    }, 'GitHub contribution graph API request failed');
+    
+    if (err.statusCode) {
+      throw err;
+    }
+    if (err.response) {
+      if (err.response.status === 404) {
+        const notFoundError = new Error('User not found');
+        notFoundError.statusCode = 404;
+        throw notFoundError;
+      } else if (err.response.status === 403) {
+        const forbiddenError = new Error('Access forbidden');
+        forbiddenError.statusCode = 403;
+        throw forbiddenError;
+      } else if (err.response.status === 401) {
+        const authError = new Error('GitHub authentication failed - invalid token');
+        authError.statusCode = 500;
+        throw authError;
+      }
+    }
+    const genericError = new Error('Failed to fetch GitHub contribution graph data');
+    genericError.statusCode = 500;
+    throw genericError;
+  }
+};

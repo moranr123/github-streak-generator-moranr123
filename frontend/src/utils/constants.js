@@ -51,10 +51,25 @@ export const RETRY_CONFIG = {
 // Stat types
 export const STAT_TYPES = {
   STREAK: 'streak',
-  TOP_LANGUAGES: 'top_languages'
+  TOP_LANGUAGES: 'top_languages',
+  CONTRIBUTION_GRAPH: 'contribution_graph'
 }
 
 export const STAT_TYPE_OPTIONS = [
   { value: STAT_TYPES.STREAK, label: 'Contribution Streak' },
-  { value: STAT_TYPES.TOP_LANGUAGES, label: 'Top Languages' }
+  { value: STAT_TYPES.TOP_LANGUAGES, label: 'Top Languages' },
+  { value: STAT_TYPES.CONTRIBUTION_GRAPH, label: 'Contribution Graph' }
+]
+
+// Display sections for streak cards
+export const DISPLAY_SECTIONS = {
+  TOTAL: 'total',
+  CURRENT: 'current',
+  LONGEST: 'longest'
+}
+
+export const DISPLAY_SECTION_OPTIONS = [
+  { key: DISPLAY_SECTIONS.TOTAL, label: 'Total' },
+  { key: DISPLAY_SECTIONS.CURRENT, label: 'Current' },
+  { key: DISPLAY_SECTIONS.LONGEST, label: 'Longest' }
 ]

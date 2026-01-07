@@ -28,10 +28,10 @@ export const validateUsername = (req, res, next) => {
  * Validate query parameters for card generation
  */
 export const validateCardParams = (req, res, next) => {
-  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight } = req.query;
+  const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight, displaySections } = req.query;
   
   // Validate statType
-  const validStatTypes = ['streak', 'top_languages'];
+  const validStatTypes = ['streak', 'top_languages', 'contribution_graph'];
   if (statType && !validStatTypes.includes(statType)) {
     return res.status(400).json({ error: `Invalid statType. Must be one of: ${validStatTypes.join(', ')}` });
   }
@@ -50,6 +50,17 @@ export const validateCardParams = (req, res, next) => {
   // Validate hideAvatar (boolean)
   if (hideAvatar && hideAvatar !== 'true' && hideAvatar !== 'false') {
     return res.status(400).json({ error: 'hideAvatar must be "true" or "false"' });
+  }
+  
+  // Validate displaySections (only for streak stat type)
+  // Format: comma-separated string like "total,current" or "total,current,longest"
+  if (displaySections) {
+    const validSectionKeys = ['total', 'current', 'longest'];
+    const sections = displaySections.split(',');
+    const invalidSections = sections.filter(s => !validSectionKeys.includes(s.trim()));
+    if (invalidSections.length > 0) {
+      return res.status(400).json({ error: `Invalid displaySections. Valid sections are: ${validSectionKeys.join(', ')}` });
+    }
   }
   
   // Validate cardWidth

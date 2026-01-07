@@ -1,12 +1,14 @@
-import { THEMES, FONT_SIZES, EXPORT_FORMATS, CARD_DIMENSIONS } from '../utils/constants'
+import { THEMES, FONT_SIZES, EXPORT_FORMATS, CARD_DIMENSIONS, STAT_TYPES, DISPLAY_SECTION_OPTIONS, DISPLAY_SECTIONS } from '../utils/constants'
 
 export function CustomizationPanel({
+  statType,
   theme,
   fontSize,
   hideAvatar,
   cardWidth,
   cardHeight,
   exportFormat,
+  displaySections,
   widthError,
   heightError,
   onThemeChange,
@@ -16,7 +18,8 @@ export function CustomizationPanel({
   onCardWidthBlur,
   onCardHeightChange,
   onCardHeightBlur,
-  onExportFormatChange
+  onExportFormatChange,
+  onDisplaySectionsChange
 }) {
   return (
     <div className="customization-section">
@@ -69,6 +72,34 @@ export function CustomizationPanel({
           <option value={FONT_SIZES.LARGE}>Large</option>
         </select>
       </div>
+
+      {statType === STAT_TYPES.STREAK && (
+        <div className="input-group">
+          <label>Display Sections</label>
+          <div className="checkbox-group">
+            {DISPLAY_SECTION_OPTIONS.map((option) => (
+              <div key={option.key} className="checkbox-item">
+                <input
+                  type="checkbox"
+                  id={`display-${option.key}`}
+                  checked={displaySections[option.key] || false}
+                  onChange={(e) => {
+                    const newSections = {
+                      ...displaySections,
+                      [option.key]: e.target.checked
+                    }
+                    onDisplaySectionsChange(newSections)
+                  }}
+                  className="checkbox-input"
+                  aria-label={`Toggle ${option.label} section`}
+                /><label htmlFor={`display-${option.key}`} className="checkbox-label">
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="input-group">
         <label htmlFor="cardWidth">Card Width (px)</label>

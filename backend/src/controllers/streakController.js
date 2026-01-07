@@ -1,8 +1,8 @@
 // /src/controllers/streakController.js
-import { fetchGitHubData } from "../services/githubService.js";
+import { fetchGitHubData, fetchContributionGraphData } from "../services/githubService.js";
 import { fetchUserLanguages } from "../services/githubLanguageService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
-import { generateLanguagesCard } from "../utils/statsCard.js";
+import { generateLanguagesCard, generateContributionGraphCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
 // Cache removed - no longer using caching
 import { processStreakData } from "../utils/streakUtils.js";
@@ -146,10 +146,41 @@ export const getStreakCard = async (req, res) => {
       });
       
       logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
+    } else if (statType === 'contribution_graph') {
+        const graphData = await fetchContributionGraphData(username);
+        
+        buffer = await generateContributionGraphCard({
+        username,
+        weeks: graphData.weeks,
+        avatarUrl,
+        colors,
+        fontSize,
+        hideAvatar,
+        cardWidth,
+        cardHeight
+      });
+      
+      logger.info({ username, weekCount: graphData.weeks.length }, 'Contribution graph card generated');
     } else {
         // Default: streak
         const result = await fetchGitHubData(username);
         const streakData = processStreakData(result);
+        
+        // Parse displaySections from comma-separated string to object
+        let displaySectionsObj = {
+          total: true,
+          current: true,
+          longest: true
+        };
+        
+        if (req.query.displaySections) {
+          const enabledSections = req.query.displaySections.split(',').map(s => s.trim());
+          displaySectionsObj = {
+            total: enabledSections.includes('total'),
+            current: enabledSections.includes('current'),
+            longest: enabledSections.includes('longest')
+          };
+        }
 
         buffer = await generateStreakCard({
         username, 
@@ -165,10 +196,11 @@ export const getStreakCard = async (req, res) => {
         currentRange: streakData.currentRange,
         longestRange: streakData.longestRange,
         firstContribution: streakData.firstContribution,
-        lastContribution: streakData.lastContribution
+        lastContribution: streakData.lastContribution,
+        displaySections: displaySectionsObj
       });
       
-      logger.info({ username, current: streakData.current, longest: streakData.longest }, 'Streak card generated');
+      logger.info({ username, current: streakData.current, longest: streakData.longest, displaySections: displaySectionsObj }, 'Streak card generated');
     }
 
     // Set HTTP headers for images (no caching)
