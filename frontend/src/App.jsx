@@ -357,7 +357,6 @@ function App() {
                   exportFormat={customization.exportFormat}
                   onCopyHtmlCode={handleCopyHtmlCode}
                   onCopyUrl={handleCopyUrl}
-                  onShareUrl={handleShareUrl}
                   onDownloadCard={handleDownloadCard}
                 />
               )}
