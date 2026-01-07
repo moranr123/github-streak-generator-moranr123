@@ -127,82 +127,270 @@ export const fetchRepositoryStats = async (username) => {
     throw tokenError;
   }
 
-  const query = `
-    query($username: String!, $first: Int!) {
-      user(login: $username) {
-        repositories(first: $first, ownerAffiliations: OWNER, orderBy: {field: STARGAZERS, direction: DESC}) {
-          totalCount
-          nodes {
-            name
-            stargazerCount
-            forkCount
-            isPrivate
-            isFork
-            primaryLanguage {
-              name
-            }
-          }
+  // First, check if we're querying the authenticated user's own account
+  // This is important because we can only see private repos for our own account
+  let authenticatedUsername = null;
+  try {
+    const viewerQuery = `
+      query {
+        viewer {
+          login
         }
       }
-    }
-  `;
-
-  const variables = { username, first: 100 };
-
-  try {
-    const response = await axios.post(
+    `;
+    const viewerResponse = await axios.post(
       "https://api.github.com/graphql",
-      { query, variables },
+      { query: viewerQuery },
       {
         headers: {
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
         },
       }
     );
-    
-    const { data } = response;
+    if (viewerResponse.data.data?.viewer) {
+      authenticatedUsername = viewerResponse.data.data.viewer.login.toLowerCase();
+    }
+  } catch (err) {
+    logger.warn({ error: err.message }, 'Failed to get authenticated user');
+  }
 
-    if (data.errors) {
-      const error = data.errors[0];
-      if (error.type === 'NOT_FOUND') {
+  const isOwnAccount = authenticatedUsername && authenticatedUsername === username.toLowerCase();
+
+  // Fetch all repositories using pagination
+  let allRepositories = [];
+  let hasNextPage = true;
+  let cursor = null;
+  let totalRepos = 0;
+  let publicReposCountFromAPI = 0;
+  let privateReposCountFromAPI = 0;
+
+  try {
+    // First, get accurate counts using privacy filters (only works for own account or if token has access)
+    if (isOwnAccount) {
+      try {
+        // Try using viewer instead of user query for own account (more reliable)
+        const countQuery = `
+          query {
+            viewer {
+              publicRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PUBLIC) {
+                totalCount
+              }
+              privateRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PRIVATE) {
+                totalCount
+              }
+            }
+          }
+        `;
+        
+        const countResponse = await axios.post(
+          "https://api.github.com/graphql",
+          { query: countQuery },
+          {
+            headers: {
+              Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+            },
+          }
+        );
+        
+        if (countResponse.data.data?.viewer) {
+          publicReposCountFromAPI = countResponse.data.data.viewer.publicRepositories?.totalCount || 0;
+          privateReposCountFromAPI = countResponse.data.data.viewer.privateRepositories?.totalCount || 0;
+          logger.info({ 
+            username, 
+            isOwnAccount: true,
+            publicReposFromAPI: publicReposCountFromAPI,
+            privateReposFromAPI: privateReposCountFromAPI
+          }, 'Got separate public/private repo counts from API using viewer');
+        }
+      } catch (err) {
+        logger.warn({ error: err.message, stack: err.stack }, 'Failed to get separate repo counts using viewer, trying user query');
+        
+        // Fallback to user query
+        try {
+          const countQuery = `
+            query($username: String!) {
+              user(login: $username) {
+                publicRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PUBLIC) {
+                  totalCount
+                }
+                privateRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PRIVATE) {
+                  totalCount
+                }
+              }
+            }
+          `;
+          
+          const countResponse = await axios.post(
+            "https://api.github.com/graphql",
+            { query: countQuery, variables: { username } },
+            {
+              headers: {
+                Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+              },
+            }
+          );
+          
+          if (countResponse.data.data?.user) {
+            publicReposCountFromAPI = countResponse.data.data.user.publicRepositories?.totalCount || 0;
+            privateReposCountFromAPI = countResponse.data.data.user.privateRepositories?.totalCount || 0;
+            logger.info({ 
+              username, 
+              isOwnAccount: true,
+              publicReposFromAPI: publicReposCountFromAPI,
+              privateReposFromAPI: privateReposCountFromAPI
+            }, 'Got separate public/private repo counts from API using user query');
+          }
+        } catch (err2) {
+          logger.warn({ error: err2.message }, 'Failed to get separate repo counts using user query');
+        }
+      }
+    }
+
+    while (hasNextPage) {
+      const query = `
+        query($username: String!, $first: Int!, $after: String) {
+          user(login: $username) {
+            repositories(first: $first, after: $after, ownerAffiliations: OWNER, orderBy: {field: STARGAZERS, direction: DESC}) {
+              totalCount
+              pageInfo {
+                hasNextPage
+                endCursor
+              }
+              nodes {
+                name
+                stargazerCount
+                forkCount
+                isPrivate
+                isFork
+                primaryLanguage {
+                  name
+                }
+              }
+            }
+            publicRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PUBLIC) {
+              totalCount
+            }
+            privateRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PRIVATE) {
+              totalCount
+            }
+          }
+        }
+      `;
+
+      const variables = { username, first: 100, after: cursor };
+
+      const response = await axios.post(
+        "https://api.github.com/graphql",
+        { query, variables },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          },
+        }
+      );
+      
+      const { data } = response;
+
+      if (data.errors) {
+        const error = data.errors[0];
+        if (error.type === 'NOT_FOUND') {
+          const notFoundError = new Error('User not found');
+          notFoundError.statusCode = 404;
+          throw notFoundError;
+        }
+        const graphqlError = new Error('GitHub API error');
+        graphqlError.statusCode = 400;
+        throw graphqlError;
+      }
+
+      if (!data.data || !data.data.user) {
         const notFoundError = new Error('User not found');
         notFoundError.statusCode = 404;
         throw notFoundError;
       }
-      const graphqlError = new Error('GitHub API error');
-      graphqlError.statusCode = 400;
-      throw graphqlError;
-    }
 
-    if (!data.data || !data.data.user) {
-      const notFoundError = new Error('User not found');
-      notFoundError.statusCode = 404;
-      throw notFoundError;
+      const repoData = data.data.user.repositories;
+      if (totalRepos === 0) {
+        totalRepos = repoData.totalCount;
+        // Try to get accurate counts from separate queries
+        const publicReposCountFromQuery = data.data.user.publicRepositories?.totalCount || 0;
+        const privateReposCountFromQuery = data.data.user.privateRepositories?.totalCount || 0;
+        
+        // If we got separate counts, use them (more accurate)
+        if (privateReposCountFromQuery > 0 || publicReposCountFromQuery > 0) {
+          logger.info({ 
+            username, 
+            totalRepos,
+            publicReposFromQuery: publicReposCountFromQuery,
+            privateReposFromQuery: privateReposCountFromQuery
+          }, 'Got separate public/private repo counts from API');
+        }
+      }
+      
+      allRepositories = allRepositories.concat(repoData.nodes);
+      hasNextPage = repoData.pageInfo.hasNextPage;
+      cursor = repoData.pageInfo.endCursor;
     }
-
-    const repositories = data.data.user.repositories.nodes;
-    const totalRepos = data.data.user.repositories.totalCount;
     
-    // Calculate statistics
-    const publicRepos = repositories.filter(repo => !repo.isPrivate && !repo.isFork);
-    const privateRepos = repositories.filter(repo => repo.isPrivate && !repo.isFork);
-    const forks = repositories.filter(repo => repo.isFork);
+    // Calculate statistics from all repositories
+    const publicRepos = allRepositories.filter(repo => !repo.isPrivate && !repo.isFork);
+    const forks = allRepositories.filter(repo => repo.isFork);
     
-    const totalStars = repositories.reduce((sum, repo) => sum + repo.stargazerCount, 0);
-    const totalForks = repositories.reduce((sum, repo) => sum + repo.forkCount, 0);
+    // Count public repos and forks from fetched data
+    const publicReposCount = publicRepos.length;
+    const forksCount = forks.length;
+    
+    // Use API counts if available (from privacy filter queries), otherwise calculate
+    let privateReposCount;
+    let finalPublicReposCount;
+    
+    if (isOwnAccount && (privateReposCountFromAPI > 0 || publicReposCountFromAPI > 0)) {
+      // Use API-provided counts (most accurate for own account)
+      finalPublicReposCount = publicReposCountFromAPI;
+      privateReposCount = privateReposCountFromAPI;
+      logger.info({ 
+        username, 
+        isOwnAccount: true,
+        totalRepos, 
+        fetchedRepos: allRepositories.length,
+        publicReposCount: finalPublicReposCount, 
+        privateReposCount, 
+        forksCount,
+        usingAPICounts: true
+      }, 'Repository statistics calculated using API counts');
+    } else {
+      // For other users or if API counts failed, calculate from fetched data
+      finalPublicReposCount = publicReposCount;
+      // Calculate private repos: total - public - forks
+      privateReposCount = Math.max(0, totalRepos - publicReposCount - forksCount);
+      
+      logger.info({ 
+        username, 
+        isOwnAccount: false,
+        totalRepos, 
+        fetchedRepos: allRepositories.length,
+        publicReposCount: finalPublicReposCount, 
+        privateReposCount, 
+        forksCount,
+        note: 'Private repos may not be visible when querying other users'
+      }, 'Repository statistics calculated');
+    }
+    
+    const totalStars = allRepositories.reduce((sum, repo) => sum + repo.stargazerCount, 0);
+    const totalForks = allRepositories.reduce((sum, repo) => sum + repo.forkCount, 0);
     
     // Find most starred repository
-    const mostStarredRepo = repositories.length > 0 
-      ? repositories.reduce((max, repo) => 
+    const mostStarredRepo = allRepositories.length > 0 
+      ? allRepositories.reduce((max, repo) => 
           repo.stargazerCount > max.stargazerCount ? repo : max
         )
       : null;
 
     return {
       totalRepos,
-      publicRepos: publicRepos.length,
-      privateRepos: privateRepos.length,
-      forks: forks.length,
+      publicRepos: finalPublicReposCount,
+      privateRepos: privateReposCount,
+      forks: forksCount,
       totalStars,
       totalForks,
       mostStarredRepo: mostStarredRepo ? {
