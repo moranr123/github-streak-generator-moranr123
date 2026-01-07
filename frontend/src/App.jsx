@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import './App.css'
-import fireIcon from './assets/fire.png'
+import statsIcon from './assets/stats-icon.svg'
 import { useDebounce } from './hooks/useDebounce'
 import { useCardGeneration } from './hooks/useCardGeneration'
 import { useCustomization } from './hooks/useCustomization'
@@ -248,8 +248,8 @@ function App() {
       <div className="container">
         <header role="banner">
           <div className="header-title">
-            <img src={fireIcon} alt="Fire icon" className="fire-logo" />
-            <h1>Github Streak Generator</h1>
+            <img src={statsIcon} alt="Stats icon" className="stats-logo" />
+            <h1>Github stats generator</h1>
             <button
               className="info-icon-button"
               onClick={() => setShowInstructions(true)}

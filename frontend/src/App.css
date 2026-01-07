@@ -187,7 +187,7 @@ header {
   height: 20px;
 }
 
-.fire-logo {
+.stats-logo {
   width: 2rem;
   height: 2rem;
   display: inline-block;
@@ -1299,7 +1299,7 @@ select:focus-visible {
     margin-top: 8px;
   }
 
-  .fire-logo {
+  .stats-logo {
     font-size: 1.75rem;
   }
 

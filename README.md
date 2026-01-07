@@ -1,4 +1,4 @@
-# GitHub Streak Generator
+# Github stats generator
 
 A web application to generate beautiful GitHub contribution streak cards with customizable themes and export options.
 

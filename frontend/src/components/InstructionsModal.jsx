@@ -36,7 +36,7 @@ export function InstructionsModal({ isOpen, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal-header">
-          <h2 id="modal-title">GitHub Streak Generator - Instructions</h2>
+          <h2 id="modal-title">Github stats generator - Instructions</h2>
           <button 
             className="modal-close"
             onClick={onClose}

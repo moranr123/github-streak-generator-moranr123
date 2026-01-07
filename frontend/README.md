@@ -1,4 +1,4 @@
-# GitHub Streak Generator Frontend
+# Github stats generator Frontend
 
 ## Environment Variables
 
