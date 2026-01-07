@@ -1,8 +1,8 @@
 // /src/controllers/streakController.js
-import { fetchGitHubData } from "../services/githubService.js";
+import { fetchGitHubData, fetchRepositoryStats } from "../services/githubService.js";
 import { fetchUserLanguages } from "../services/githubLanguageService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
-import { generateLanguagesCard } from "../utils/statsCard.js";
+import { generateLanguagesCard, generateRepositoryStatsCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
 // Cache removed - no longer using caching
 import { processStreakData } from "../utils/streakUtils.js";
@@ -146,6 +146,21 @@ export const getStreakCard = async (req, res) => {
       });
       
       logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
+    } else if (statType === 'repository_stats') {
+        const repoStats = await fetchRepositoryStats(username);
+        
+        buffer = await generateRepositoryStatsCard({
+        username,
+        stats: repoStats,
+        avatarUrl,
+        colors,
+        fontSize,
+        hideAvatar,
+        cardWidth,
+        cardHeight
+      });
+      
+      logger.info({ username, totalRepos: repoStats.totalRepos, totalStars: repoStats.totalStars }, 'Repository stats card generated');
     } else {
         // Default: streak
         const result = await fetchGitHubData(username);

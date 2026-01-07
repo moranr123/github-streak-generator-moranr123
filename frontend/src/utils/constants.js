@@ -51,12 +51,14 @@ export const RETRY_CONFIG = {
 // Stat types
 export const STAT_TYPES = {
   STREAK: 'streak',
-  TOP_LANGUAGES: 'top_languages'
+  TOP_LANGUAGES: 'top_languages',
+  REPOSITORY_STATS: 'repository_stats'
 }
 
 export const STAT_TYPE_OPTIONS = [
   { value: STAT_TYPES.STREAK, label: 'Contribution Streak' },
-  { value: STAT_TYPES.TOP_LANGUAGES, label: 'Top Languages' }
+  { value: STAT_TYPES.TOP_LANGUAGES, label: 'Top Languages' },
+  { value: STAT_TYPES.REPOSITORY_STATS, label: 'Repository Statistics' }
 ]
 
 // Display sections for streak cards
