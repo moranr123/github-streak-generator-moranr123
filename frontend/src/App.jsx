@@ -339,6 +339,7 @@ function App() {
                 onImageLoad={handleImageLoad}
                 onImageError={handleImageError}
                 apiBase={API_BASE}
+                customization={customization.getCustomization()}
               />
               
               {!imageLoading && !imageError && cardUrl && (

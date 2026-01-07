@@ -31,7 +31,7 @@ export const validateCardParams = (req, res, next) => {
   const { statType, theme, fontSize, hideAvatar, cardWidth, cardHeight } = req.query;
   
   // Validate statType
-  const validStatTypes = ['streak', 'top_languages', 'contributions', 'repositories'];
+  const validStatTypes = ['streak', 'top_languages'];
   if (statType && !validStatTypes.includes(statType)) {
     return res.status(400).json({ error: `Invalid statType. Must be one of: ${validStatTypes.join(', ')}` });
   }

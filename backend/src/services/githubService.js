@@ -1,19 +1,8 @@
 import axios from "axios";
 import { logger } from "../middleware/logger.js";
-import { cacheManager } from "../utils/cacheManager.js";
-import { getGitHubDataCacheKey } from "../utils/cacheUtils.js";
-import { CACHE_TTL } from "../utils/cacheUtils.js";
+// Cache removed - no longer using caching
 
 export const fetchGitHubData = async (username) => {
-  // Check cache first
-  const cacheKey = getGitHubDataCacheKey(username);
-  const cached = await cacheManager.get(cacheKey);
-  
-  if (cached) {
-    logger.info({ username }, 'GitHub data retrieved from cache');
-    return cached;
-  }
-
   // Check if GITHUB_TOKEN is set
   if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {
     const tokenError = new Error('GITHUB_TOKEN is not configured. Please set it in your .env file.');
@@ -103,10 +92,6 @@ export const fetchGitHubData = async (username) => {
 
     // Prepare result
     const result = { days, rateLimitInfo };
-
-    // Cache the result
-    await cacheManager.set(cacheKey, result, CACHE_TTL.GITHUB_DATA);
-    logger.info({ username }, 'GitHub data cached');
 
     // Return both days and rate limit info
     return result;

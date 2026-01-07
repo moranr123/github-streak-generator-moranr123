@@ -1,5 +1,4 @@
 import { cacheManager } from "../utils/cacheManager.js";
-import { getRedisClient } from "../utils/redisClient.js";
 import { logger } from "../middleware/logger.js";
 
 /**
@@ -17,29 +16,10 @@ export const getHealth = async (req, res) => {
       dependencies: {
         cache: {
           enabled: cacheManager.isEnabled(),
-          status: 'ok'
+          status: 'disabled'
         }
       }
     };
-
-    // Check Redis connection if enabled
-    if (cacheManager.isEnabled()) {
-      try {
-        const redisClient = getRedisClient();
-        if (redisClient) {
-          await redisClient.ping();
-          health.dependencies.cache.status = 'ok';
-        } else {
-          health.dependencies.cache.status = 'disconnected';
-          health.status = 'degraded';
-        }
-      } catch (error) {
-        health.dependencies.cache.status = 'error';
-        health.dependencies.cache.error = error.message;
-        health.status = 'degraded';
-        logger.warn({ error: error.message }, 'Redis health check failed');
-      }
-    }
 
     // Check GitHub token
     if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {

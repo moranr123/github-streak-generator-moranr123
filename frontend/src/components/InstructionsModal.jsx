@@ -95,7 +95,7 @@ export function InstructionsModal({ isOpen, onClose }) {
           <section>
             <h3>💡 Tips</h3>
             <ul>
-              <li>Cards are cached for faster loading on subsequent requests</li>
+              <li>Cards are generated fresh on each request</li>
               <li>Your preferences are saved in your browser</li>
               <li>The card updates automatically when you change customization options</li>
               <li>Works offline - detects when you're disconnected</li>

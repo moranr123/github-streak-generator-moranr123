@@ -1,5 +1,6 @@
 // /src/utils/streakCard.js
 import { createCanvas, loadImage } from "canvas";
+import { logger } from "../middleware/logger.js";
 
 export async function generateStreakCard({ 
   username, 
@@ -31,6 +32,26 @@ export async function generateStreakCard({
   // Merge with custom colors
   const cardColors = { ...defaultColors, ...colors };
   
+  // Ensure text is visible on light backgrounds - always override for light themes
+  const bgColor = cardColors.background || defaultColors.background;
+  const isLightBg = bgColor.toLowerCase() === '#ffffff' || 
+                     bgColor.toLowerCase() === '#fff' ||
+                     (bgColor.startsWith('#') && bgColor.length >= 7 &&
+                      parseInt(bgColor.substring(1, 3), 16) > 240 &&
+                      parseInt(bgColor.substring(3, 5), 16) > 240 &&
+                      parseInt(bgColor.substring(5, 7), 16) > 240);
+  
+  if (isLightBg) {
+    // Always override text colors for light backgrounds to ensure visibility
+    // Force dark colors for all text elements on light backgrounds - use direct assignment
+    cardColors.text = '#24292e';
+    cardColors.longestStreak = '#24292e';
+    cardColors.totalCommits = '#24292e';
+    cardColors.dateText = '#586069';
+    cardColors.currentStreak = '#f97316';
+    cardColors.divider = '#e1e4e8';
+  }
+  
   // Use provided width and height, with validation
   const width = Math.max(400, Math.min(2000, Math.round(cardWidth)));
   const height = Math.max(200, Math.min(1200, Math.round(cardHeight)));
@@ -52,6 +73,22 @@ export async function generateStreakCard({
   // Calculate font sizes based on fontSize parameter and card size
   const fontSizeMultiplier = fontSize === 'small' ? 0.85 : fontSize === 'large' ? 1.15 : 1.0;
   const combinedMultiplier = fontSizeMultiplier * sizeMultiplier;
+  
+  logger.info({
+    fontSize,
+    fontSizeMultiplier,
+    sizeMultiplier,
+    combinedMultiplier,
+    cardWidth: width,
+    cardHeight: height,
+    isLightBg,
+    cardColors: {
+      background: cardColors.background,
+      totalCommits: cardColors.totalCommits,
+      longestStreak: cardColors.longestStreak,
+      text: cardColors.text
+    }
+  }, 'Card generation started');
   
   // Use width multiplier for horizontal elements, height multiplier for vertical elements
   const hScale = widthMultiplier; // Horizontal scaling
@@ -133,12 +170,26 @@ export async function generateStreakCard({
   const leftDateY = sectionCenterY + 35 * vScale;
   
   // Total number
-  ctx.fillStyle = cardColors.totalCommits;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Force color to be dark for light backgrounds
+  const totalColor = isLightBg ? '#24292e' : cardColors.totalCommits;
+  ctx.fillStyle = totalColor;
   ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
   const totalText = total.toLocaleString();
   const totalTextWidth = ctx.measureText(totalText).width;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  
+  logger.info({
+    fillStyle: ctx.fillStyle,
+    font: ctx.font,
+    largeNumberSize,
+    text: totalText,
+    position: { x: leftCenterX, y: leftNumberY },
+    cardColorTotal: cardColors.totalCommits,
+    isLightBg,
+    forcedColor: totalColor
+  }, 'Drawing total contributions');
+  
   ctx.fillText(totalText, leftCenterX, leftNumberY);
   
   // Label
@@ -208,10 +259,25 @@ export async function generateStreakCard({
   const rightDateY = sectionCenterY + 35 * vScale;
   
   // Longest number
-  ctx.fillStyle = cardColors.longestStreak;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Force color to be dark for light backgrounds
+  const longestColor = isLightBg ? '#24292e' : cardColors.longestStreak;
+  ctx.fillStyle = longestColor;
   ctx.font = `bold ${largeNumberSize}px 'Segoe UI', Arial, sans-serif`;
   const longestText = `${longest}`;
-  ctx.textBaseline = 'middle';
+  
+  logger.info({
+    fillStyle: ctx.fillStyle,
+    font: ctx.font,
+    largeNumberSize,
+    text: longestText,
+    position: { x: rightCenterX, y: rightNumberY },
+    cardColorLongest: cardColors.longestStreak,
+    isLightBg,
+    forcedColor: longestColor
+  }, 'Drawing longest streak');
+  
   ctx.fillText(longestText, rightCenterX, rightNumberY);
   
   // Label

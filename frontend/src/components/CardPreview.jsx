@@ -6,14 +6,28 @@ export function CardPreview({
   cardLoaded,
   onImageLoad,
   onImageError,
-  apiBase
+  apiBase,
+  customization
 }) {
   if (!cardUrl) {
+    // Generate preview URL with current customization settings
+    const previewParams = new URLSearchParams()
+    if (customization?.theme) previewParams.set('theme', customization.theme)
+    if (customization?.fontSize && customization.fontSize !== 'normal') previewParams.set('fontSize', customization.fontSize)
+    if (customization?.hideAvatar) previewParams.set('hideAvatar', 'true')
+    if (customization?.cardWidth) previewParams.set('cardWidth', customization.cardWidth)
+    if (customization?.cardHeight) previewParams.set('cardHeight', customization.cardHeight)
+    if (customization?.statType && customization.statType !== 'streak') previewParams.set('statType', customization.statType)
+    // Add timestamp to prevent caching
+    previewParams.set('_t', Date.now())
+    
+    const previewUrl = `${apiBase}/card/moranr123?${previewParams.toString()}`
+    
     return (
       <div className="placeholder">
         <div className="preview-container">
           <img 
-            src={`${apiBase}/card/moranr123?theme=ffffff`}
+            src={previewUrl}
             alt="Preview example of GitHub streak card" 
             className="preview-image"
             loading="lazy"

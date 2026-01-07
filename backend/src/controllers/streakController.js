@@ -1,12 +1,10 @@
 // /src/controllers/streakController.js
 import { fetchGitHubData } from "../services/githubService.js";
 import { fetchUserLanguages } from "../services/githubLanguageService.js";
-import { getRepositoryCount } from "../services/githubRepositoryService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
-import { generateLanguagesCard, generateContributionsCard, generateRepositoriesCard } from "../utils/statsCard.js";
+import { generateLanguagesCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
-import { cacheManager } from "../utils/cacheManager.js";
-import { getCardCacheKey, generateETag, CACHE_TTL } from "../utils/cacheUtils.js";
+// Cache removed - no longer using caching
 import { processStreakData, setRateLimitHeaders } from "../utils/streakUtils.js";
 
 // JSON API (optional)
@@ -90,13 +88,29 @@ function generateColorsFromTheme(themeHex) {
                         parseInt(themeHex.substring(4, 6), 16) > 240);
   
   if (isLightTheme) {
+    // Light theme: white/light background with dark text
     colors.background = '#ffffff';
-    colors.text = '#24292e';
-    colors.accent = '#0366d6';
+    colors.backgroundGradient = '#f8f9fa';
+    colors.border = '#e1e4e8';
+    colors.text = '#24292e'; // Dark text
+    colors.dateText = '#586069'; // Medium gray for dates
+    colors.accent = '#0366d6'; // Blue accent
+    colors.avatarBorder = '#24292e';
+    colors.totalCommits = '#24292e'; // Dark text
+    colors.currentStreak = '#f97316'; // Orange for current streak
+    colors.longestStreak = '#24292e'; // Dark text
+    colors.divider = '#e1e4e8';
   } else {
+    // Dark theme: dark background with light text
     colors.background = darken(themeHex, 0.12);
+    colors.backgroundGradient = darken(themeHex, 0.18);
+    colors.border = darken(themeHex, 0.35);
     colors.text = lighten(themeHex, 0.85);
     colors.accent = themeColor;
+    colors.avatarBorder = themeColor;
+    colors.totalCommits = themeColor;
+    colors.currentStreak = lighten(themeHex, 0.85);
+    colors.longestStreak = lighten(themeHex, 0.85);
   }
   
   return colors;
@@ -118,126 +132,55 @@ export const getStreakCard = async (req, res) => {
     // Generate colors from theme
     const colors = generateColorsFromTheme(themeHex);
 
-    // Create customization object for cache key (include statType)
-    const customization = {
-      statType,
-      theme: themeHex,
-      fontSize,
-      hideAvatar,
-      cardWidth,
-      cardHeight
-    };
-
-    // Check cache for generated card
-    const cacheKey = getCardCacheKey(username, customization);
-    const etag = generateETag(cacheKey);
-    
-    // Check if client has cached version
-    const clientETag = req.headers['if-none-match'];
-    if (clientETag === `"${etag}"`) {
-      res.status(304).end(); // Not Modified
-      return;
-    }
-
+    // Generate card based on stat type (no caching)
     let buffer;
-    const cachedBuffer = await cacheManager.get(cacheKey);
-    
-    if (cachedBuffer && cachedBuffer.data) {
-      // Convert base64 string back to buffer
-      buffer = Buffer.from(cachedBuffer.data, 'base64');
-      logger.info({ username, statType, cacheKey }, 'Card retrieved from cache');
-    } else {
-      // Generate card based on stat type
-      if (statType === 'top_languages') {
-        const languageData = await fetchUserLanguages(username);
-        setRateLimitHeaders(res, languageData.rateLimitInfo);
-        
-        buffer = await generateLanguagesCard({
-          username,
-          languages: languageData.languages,
-          avatarUrl,
-          colors,
-          fontSize,
-          hideAvatar,
-          cardWidth,
-          cardHeight
-        });
-        
-        logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
-      } else if (statType === 'contributions') {
-        const result = await fetchGitHubData(username);
-        const streakData = processStreakData(result);
-        setRateLimitHeaders(res, streakData.rateLimitInfo);
-        
-        buffer = await generateContributionsCard({
-          username,
-          total: streakData.total,
-          avatarUrl,
-          colors,
-          fontSize,
-          hideAvatar,
-          cardWidth,
-          cardHeight
-        });
-        
-        logger.info({ username, total: streakData.total }, 'Contributions card generated');
-      } else if (statType === 'repositories') {
-        const repoCount = await getRepositoryCount(username);
-        // Note: getRepositoryCount doesn't return rateLimitInfo, so we'll skip setting headers
-        // In production, you might want to modify the service to return rate limit info
-        
-        buffer = await generateRepositoriesCard({
-          username,
-          repositoryCount: repoCount,
-          avatarUrl,
-          colors,
-          fontSize,
-          hideAvatar,
-          cardWidth,
-          cardHeight
-        });
-        
-        logger.info({ username, repositoryCount: repoCount }, 'Repositories card generated');
-      } else {
-        // Default: streak
-        const result = await fetchGitHubData(username);
-        const streakData = processStreakData(result);
-        setRateLimitHeaders(res, streakData.rateLimitInfo);
-
-        buffer = await generateStreakCard({ 
-          username, 
-          current: streakData.current, 
-          longest: streakData.longest, 
-          total: streakData.total, 
-          avatarUrl, 
-          colors,
-          fontSize,
-          hideAvatar,
-          cardWidth,
-          cardHeight,
-          currentRange: streakData.currentRange,
-          longestRange: streakData.longestRange,
-          firstContribution: streakData.firstContribution,
-          lastContribution: streakData.lastContribution
-        });
-        
-        logger.info({ username, current: streakData.current, longest: streakData.longest }, 'Streak card generated');
-      }
-
-      // Cache the buffer as base64
-      await cacheManager.set(cacheKey, {
-        data: buffer.toString('base64'),
-        contentType: 'image/png'
-      }, CACHE_TTL.CARD_IMAGE);
+    if (statType === 'top_languages') {
+      const languageData = await fetchUserLanguages(username);
+      setRateLimitHeaders(res, languageData.rateLimitInfo);
       
-      logger.info({ username, statType, cacheKey }, 'Card generated and cached');
+      buffer = await generateLanguagesCard({
+        username,
+        languages: languageData.languages,
+        avatarUrl,
+        colors,
+        fontSize,
+        hideAvatar,
+        cardWidth,
+        cardHeight
+      });
+      
+      logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
+    } else {
+      // Default: streak
+      const result = await fetchGitHubData(username);
+      const streakData = processStreakData(result);
+      setRateLimitHeaders(res, streakData.rateLimitInfo);
+
+      buffer = await generateStreakCard({ 
+        username, 
+        current: streakData.current, 
+        longest: streakData.longest, 
+        total: streakData.total, 
+        avatarUrl, 
+        colors,
+        fontSize,
+        hideAvatar,
+        cardWidth,
+        cardHeight,
+        currentRange: streakData.currentRange,
+        longestRange: streakData.longestRange,
+        firstContribution: streakData.firstContribution,
+        lastContribution: streakData.lastContribution
+      });
+      
+      logger.info({ username, current: streakData.current, longest: streakData.longest }, 'Streak card generated');
     }
 
-    // Set HTTP cache headers and CORS headers for images
+    // Set HTTP headers for images (no caching)
     res.setHeader("Content-Type", "image/png");
-    res.setHeader("Cache-Control", "public, max-age=3600"); // 1 hour browser cache
-    res.setHeader("ETag", `"${etag}"`);
-    res.setHeader("Last-Modified", new Date().toUTCString());
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // Disable browser caching
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     
     // Set CORS headers for image responses
     const origin = req.headers.origin;

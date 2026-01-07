@@ -1,7 +1,6 @@
 import axios from "axios";
 import { logger } from "../middleware/logger.js";
-import { cacheManager } from "../utils/cacheManager.js";
-import { CACHE_TTL } from "../utils/cacheUtils.js";
+// Cache removed - no longer using caching
 
 /**
  * Fetch user's top languages from GitHub API
@@ -9,14 +8,6 @@ import { CACHE_TTL } from "../utils/cacheUtils.js";
  * @returns {Promise<Object>} Top languages data
  */
 export const fetchUserLanguages = async (username) => {
-  const cacheKey = `github:languages:${username.toLowerCase()}`;
-  const cached = await cacheManager.get(cacheKey);
-  
-  if (cached) {
-    logger.info({ username }, 'GitHub languages retrieved from cache');
-    return cached;
-  }
-
   // Check if GITHUB_TOKEN is set
   if (!process.env.GITHUB_TOKEN || process.env.GITHUB_TOKEN === 'your_github_token_here') {
     const tokenError = new Error('GITHUB_TOKEN is not configured. Please set it in your .env file.');
@@ -106,7 +97,7 @@ export const fetchUserLanguages = async (username) => {
     // Convert to array and sort by size
     const languages = Object.values(languageMap)
       .sort((a, b) => b.size - a.size)
-      .slice(0, 10); // Top 10 languages
+      .slice(0, 3); // Top 3 languages
 
     // Store rate limit info from response headers
     const rateLimitInfo = {
@@ -116,11 +107,9 @@ export const fetchUserLanguages = async (username) => {
     };
 
     const result = { languages, rateLimitInfo };
-
-    // Cache the result
-    await cacheManager.set(cacheKey, result, CACHE_TTL.GITHUB_DATA);
-    logger.info({ username, languageCount: languages.length }, 'GitHub languages cached');
-
+    
+    logger.info({ username, languageCount: languages.length }, 'GitHub languages fetched');
+    
     return result;
   } catch (err) {
     logger.error({ 

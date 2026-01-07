@@ -54,8 +54,8 @@ export function useCardGeneration(apiBase = API_BASE) {
     
     try {
       const baseUrl = generateCardUrl(apiBase, username.trim(), customization)
-      // No timestamp needed - using ETag for cache validation
-      const url = baseUrl
+      // Add timestamp to prevent browser caching
+      const url = `${baseUrl}&_t=${Date.now()}`
       
       await retryRequest(async () => {
         setCardUrl(url)
@@ -77,8 +77,8 @@ export function useCardGeneration(apiBase = API_BASE) {
     setImageError(false)
     setError('')
     const baseUrl = generateCardUrl(apiBase, username, customization)
-    // No timestamp needed - using ETag for cache validation
-    const url = baseUrl
+    // Add timestamp to prevent browser caching
+    const url = `${baseUrl}&_t=${Date.now()}`
     setCardUrl(url)
   }, [apiBase])
 
