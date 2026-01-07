@@ -267,12 +267,6 @@ export const fetchRepositoryStats = async (username) => {
                 }
               }
             }
-            publicRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PUBLIC) {
-              totalCount
-            }
-            privateRepositories: repositories(first: 1, ownerAffiliations: OWNER, privacy: PRIVATE) {
-              totalCount
-            }
           }
         }
       `;
@@ -312,19 +306,6 @@ export const fetchRepositoryStats = async (username) => {
       const repoData = data.data.user.repositories;
       if (totalRepos === 0) {
         totalRepos = repoData.totalCount;
-        // Try to get accurate counts from separate queries
-        const publicReposCountFromQuery = data.data.user.publicRepositories?.totalCount || 0;
-        const privateReposCountFromQuery = data.data.user.privateRepositories?.totalCount || 0;
-        
-        // If we got separate counts, use them (more accurate)
-        if (privateReposCountFromQuery > 0 || publicReposCountFromQuery > 0) {
-          logger.info({ 
-            username, 
-            totalRepos,
-            publicReposFromQuery: publicReposCountFromQuery,
-            privateReposFromQuery: privateReposCountFromQuery
-          }, 'Got separate public/private repo counts from API');
-        }
       }
       
       allRepositories = allRepositories.concat(repoData.nodes);

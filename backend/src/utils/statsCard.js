@@ -1,5 +1,6 @@
 // /src/utils/statsCard.js
 import { createCanvas, loadImage } from "canvas";
+import { isLightBackground } from "./colorUtils.js";
 
 /**
  * Generate a card showing top languages - maximized layout
@@ -26,12 +27,7 @@ export async function generateLanguagesCard({
   
   // If background is light (white or very light), ensure text is dark
   const bgColor = cardColors.background || defaultColors.background;
-  const isLightBg = bgColor.toLowerCase() === '#ffffff' || 
-                     bgColor.toLowerCase() === '#fff' ||
-                     (bgColor.startsWith('#') && 
-                      parseInt(bgColor.substring(1, 3), 16) > 240 &&
-                      parseInt(bgColor.substring(3, 5), 16) > 240 &&
-                      parseInt(bgColor.substring(5, 7), 16) > 240);
+  const isLightBg = isLightBackground(bgColor);
   
   if (isLightBg) {
     // Always force dark text colors for light backgrounds to ensure visibility
@@ -161,12 +157,7 @@ export async function generateRepositoryStatsCard({
   const cardColors = { ...defaultColors, ...colors };
   
   const bgColor = cardColors.background || defaultColors.background;
-  const isLightBg = bgColor.toLowerCase() === '#ffffff' || 
-                     bgColor.toLowerCase() === '#fff' ||
-                     (bgColor.startsWith('#') && 
-                      parseInt(bgColor.substring(1, 3), 16) > 240 &&
-                      parseInt(bgColor.substring(3, 5), 16) > 240 &&
-                      parseInt(bgColor.substring(5, 7), 16) > 240);
+  const isLightBg = isLightBackground(bgColor);
   
   if (isLightBg) {
     cardColors.text = '#24292e';

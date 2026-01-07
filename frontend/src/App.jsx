@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import './App.css'
 import statsIcon from './assets/stats-icon.svg'
 import { useDebounce } from './hooks/useDebounce'
@@ -10,7 +10,7 @@ import { CardPreview } from './components/CardPreview'
 import { ShareButtons } from './components/ShareButtons'
 import { InstructionsModal } from './components/InstructionsModal'
 import { downloadCard } from './utils/downloadUtils'
-import { generateCardUrl } from './utils/cardUtils'
+import { generateCardUrl, buildShareUrl } from './utils/cardUtils'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
 
@@ -79,37 +79,8 @@ function App() {
     generateCard(username, customization.getCustomization())
     
     // Update URL only when card is generated
-    const params = new URLSearchParams()
-    if (username) params.set('username', username)
-    if (customization.statType && customization.statType !== 'streak') params.set('statType', customization.statType)
-    if (customization.theme) params.set('theme', customization.theme)
-    if (customization.fontSize !== 'normal') params.set('fontSize', customization.fontSize)
-    if (customization.hideAvatar) params.set('hideAvatar', 'true')
-    if (customization.statType === 'streak' && customization.displaySections && typeof customization.displaySections === 'object') {
-      const enabledSections = Object.entries(customization.displaySections)
-        .filter(([_, enabled]) => enabled)
-        .map(([key, _]) => key)
-        .join(',')
-      
-      if (enabledSections && enabledSections !== 'total,current,longest') {
-        params.set('displaySections', enabledSections)
-      }
-    }
-    
-    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 600)
-    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 200)
-    
-    if (widthValue !== 600 && !isNaN(widthValue)) {
-      params.set('cardWidth', widthValue.toString())
-    }
-    if (heightValue !== 200 && !isNaN(heightValue)) {
-      params.set('cardHeight', heightValue.toString())
-    }
-    
-    const newUrl = params.toString() 
-      ? `${window.location.pathname}?${params.toString()}`
-      : window.location.pathname
-    
+    const params = buildShareUrl(username, customization.getCustomization())
+    const newUrl = params.replace(window.location.origin, '')
     window.history.replaceState({}, '', newUrl)
   }
 
@@ -150,25 +121,25 @@ function App() {
     }
   }
 
-  // Toast notification
-  const showToast = (message, type = 'success') => {
+  // Toast notification - memoized
+  const showToast = useCallback((message, type = 'success') => {
     setToast({ show: true, message, type })
     setTimeout(() => {
       setToast({ show: false, message: '', type: 'success' })
     }, 3000)
-  }
+  }, [])
 
-  // Clipboard and download functions
-  const copyToClipboard = async (text) => {
+  // Clipboard and download functions - memoized with useCallback
+  const copyToClipboard = useCallback(async (text) => {
     try {
       await navigator.clipboard.writeText(text)
       showToast('Copied to clipboard!', 'success')
     } catch (err) {
       showToast('Failed to copy to clipboard', 'error')
     }
-  }
+  }, [showToast])
 
-  const handleDownloadCard = async () => {
+  const handleDownloadCard = useCallback(async () => {
     if (!cardUrl) {
       showToast('Please generate a card first', 'error')
       return
@@ -179,54 +150,33 @@ function App() {
     } catch (err) {
       showToast('Unable to download card. Please try again.', 'error')
     }
-  }
+  }, [cardUrl, username, customization.exportFormat, showToast])
 
-  const handleCopyHtmlCode = () => {
+  const handleCopyHtmlCode = useCallback(() => {
     if (!cardUrl) {
       alert('Please generate a card first')
       return
     }
     const htmlCode = `<img src="${cardUrl}" alt="GitHub Streak Card" />`
     copyToClipboard(htmlCode)
-  }
+  }, [cardUrl, copyToClipboard])
 
-  const handleCopyUrl = () => {
+  const handleCopyUrl = useCallback(() => {
     if (!cardUrl) {
       alert('Please generate a card first')
       return
     }
     const markdownLink = `![GitHub Streak Card](${cardUrl})`
     copyToClipboard(markdownLink)
-  }
+  }, [cardUrl, copyToClipboard])
 
-  const getShareUrl = () => {
-    const params = new URLSearchParams()
-    if (username) params.set('username', username)
-    if (customization.statType && customization.statType !== 'streak') params.set('statType', customization.statType)
-    if (customization.theme) params.set('theme', customization.theme)
-    if (customization.fontSize !== 'normal') params.set('fontSize', customization.fontSize)
-    if (customization.hideAvatar) params.set('hideAvatar', 'true')
-    if (customization.statType === 'streak' && customization.displaySections && typeof customization.displaySections === 'object') {
-      const enabledSections = Object.entries(customization.displaySections)
-        .filter(([_, enabled]) => enabled)
-        .map(([key, _]) => key)
-        .join(',')
-      
-      if (enabledSections && enabledSections !== 'total,current,longest') {
-        params.set('displaySections', enabledSections)
-      }
-    }
-    const widthValue = typeof customization.cardWidth === 'number' ? customization.cardWidth : (typeof customization.cardWidth === 'string' ? parseInt(customization.cardWidth) : 600)
-    const heightValue = typeof customization.cardHeight === 'number' ? customization.cardHeight : (typeof customization.cardHeight === 'string' ? parseInt(customization.cardHeight) : 200)
-    if (widthValue !== 600 && !isNaN(widthValue)) params.set('cardWidth', widthValue.toString())
-    if (heightValue !== 200 && !isNaN(heightValue)) params.set('cardHeight', heightValue.toString())
-    
-    return `${window.location.origin}${window.location.pathname}?${params.toString()}`
-  }
+  const getShareUrl = useCallback(() => {
+    return buildShareUrl(username, customization.getCustomization())
+  }, [username, customization])
 
-  const handleShareUrl = () => {
-    copyToClipboard(getShareUrl())
-  }
+  const handleShareUrl = useCallback(() => {
+    copyToClipboard(getShareUrl)
+  }, [getShareUrl, copyToClipboard])
 
   return (
     <div className="app" role="main">

@@ -4,8 +4,29 @@ import { fetchUserLanguages } from "../services/githubLanguageService.js";
 import { generateStreakCard } from "../utils/streakCard.js";
 import { generateLanguagesCard, generateRepositoryStatsCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
-// Cache removed - no longer using caching
 import { processStreakData } from "../utils/streakUtils.js";
+import { generateColorsFromTheme } from "../utils/colorUtils.js";
+
+/**
+ * Handle API errors and send appropriate response
+ * @param {Error} err - Error object
+ * @param {Object} res - Express response object
+ * @param {string} context - Error context for logging
+ * @param {string} username - Username for logging
+ */
+function handleApiError(err, res, context, username = '') {
+  logger.error({ username, error: err.message, stack: err.stack }, context);
+  
+  if (err.statusCode === 404 || err.response?.status === 404) {
+    res.status(404).json({ error: "User not found" });
+  } else if (err.statusCode === 403 || err.response?.status === 403) {
+    res.status(403).json({ error: "Rate limit exceeded" });
+  } else if (err.message && err.message.includes('GITHUB_TOKEN')) {
+    res.status(500).json({ error: "Server configuration error: GitHub token not set" });
+  } else {
+    res.status(500).json({ error: context.includes('card') ? "Failed to generate streak card" : "Failed to fetch streak data" });
+  }
+}
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
@@ -14,7 +35,6 @@ export const getStreak = async (req, res) => {
     const result = await fetchGitHubData(username);
     const streakData = processStreakData(result);
 
-    // Log streak calculation
     logger.info({ 
       username, 
       current: streakData.current, 
@@ -23,95 +43,16 @@ export const getStreak = async (req, res) => {
       daysCount: streakData.contributions.length 
     }, 'Streak calculated');
 
-    const jsonResponse = { 
+    res.json({ 
       username, 
       current: streakData.current, 
       longest: streakData.longest, 
       total: streakData.total 
-    };
-
-    res.json(jsonResponse);
+    });
   } catch (err) {
-    // Log error for debugging but don't expose to user
-    logger.error({ username, error: err.message, stack: err.stack }, 'Error fetching streak');
-    // Check for specific error types
-    if (err.statusCode === 404 || err.response?.status === 404) {
-      res.status(404).json({ error: "User not found" });
-    } else if (err.statusCode === 403 || err.response?.status === 403) {
-      res.status(403).json({ error: "Rate limit exceeded" });
-    } else {
-      res.status(500).json({ error: "Failed to fetch streak data" });
-    }
+    handleApiError(err, res, 'Error fetching streak', username);
   }
 };
-
-// Helper function to generate colors from theme
-function generateColorsFromTheme(themeHex) {
-  const colors = {};
-  const themeColor = `#${themeHex}`;
-  
-  // Convert hex to RGB
-  const hexToRgb = (hex) => {
-    const r = parseInt(hex.substring(0, 2), 16);
-    const g = parseInt(hex.substring(2, 4), 16);
-    const b = parseInt(hex.substring(4, 6), 16);
-    return { r, g, b };
-  };
-  
-  // Convert RGB to hex
-  const rgbToHex = (r, g, b) => {
-    return `#${[r, g, b].map(x => {
-      const hex = Math.max(0, Math.min(255, Math.round(x))).toString(16);
-      return hex.length === 1 ? '0' + hex : hex;
-    }).join('')}`;
-  };
-  
-  // Darken color by reducing RGB values
-  const darken = (hex, factor) => {
-    const { r, g, b } = hexToRgb(hex);
-    return rgbToHex(r * factor, g * factor, b * factor);
-  };
-  
-  // Lighten color by increasing RGB values towards white
-  const lighten = (hex, factor) => {
-    const { r, g, b } = hexToRgb(hex);
-    return rgbToHex(r + (255 - r) * factor, g + (255 - g) * factor, b + (255 - b) * factor);
-  };
-  
-  // Check if this is a white/light theme
-  const isLightTheme = themeHex.toLowerCase() === 'ffffff' || 
-                       (parseInt(themeHex.substring(0, 2), 16) > 240 && 
-                        parseInt(themeHex.substring(2, 4), 16) > 240 && 
-                        parseInt(themeHex.substring(4, 6), 16) > 240);
-  
-  if (isLightTheme) {
-    // Light theme: white/light background with dark text
-    colors.background = '#ffffff';
-    colors.backgroundGradient = '#f8f9fa';
-    colors.border = '#e1e4e8';
-    colors.text = '#24292e'; // Dark text
-    colors.dateText = '#586069'; // Medium gray for dates
-    colors.accent = '#0366d6'; // Blue accent
-    colors.avatarBorder = '#24292e';
-    colors.totalCommits = '#24292e'; // Dark text
-    colors.currentStreak = '#f97316'; // Orange for current streak
-    colors.longestStreak = '#24292e'; // Dark text
-    colors.divider = '#e1e4e8';
-  } else {
-    // Dark theme: dark background with light text
-    colors.background = darken(themeHex, 0.12);
-    colors.backgroundGradient = darken(themeHex, 0.18);
-    colors.border = darken(themeHex, 0.35);
-    colors.text = lighten(themeHex, 0.85);
-    colors.accent = themeColor;
-    colors.avatarBorder = themeColor;
-    colors.totalCommits = themeColor;
-    colors.currentStreak = lighten(themeHex, 0.85);
-    colors.longestStreak = lighten(themeHex, 0.85);
-  }
-  
-  return colors;
-}
 
 // PNG Card API
 export const getStreakCard = async (req, res) => {
@@ -218,19 +159,6 @@ export const getStreakCard = async (req, res) => {
     
     res.send(buffer);
   } catch (err) {
-    // Log error for debugging but don't expose to user
-    logger.error({ username, error: err.message, stack: err.stack }, 'Error generating card');
-    // Check for specific error types
-    if (err.statusCode === 404 || err.response?.status === 404) {
-      res.status(404).json({ error: "User not found" });
-    } else if (err.statusCode === 403 || err.response?.status === 403) {
-      res.status(403).json({ error: "Rate limit exceeded" });
-    } else if (err.message && err.message.includes('GITHUB_TOKEN')) {
-      // Token configuration error
-      res.status(500).json({ error: "Server configuration error: GitHub token not set" });
-    } else {
-      // Generic error message - don't expose internal details
-      res.status(500).json({ error: "Failed to generate streak card" });
-    }
+    handleApiError(err, res, 'Error generating card', username);
   }
 };

@@ -1,6 +1,7 @@
 // /src/utils/streakCard.js
 import { createCanvas, loadImage } from "canvas";
 import { logger } from "../middleware/logger.js";
+import { isLightBackground } from "./colorUtils.js";
 
 export async function generateStreakCard({ 
   username, 
@@ -35,12 +36,7 @@ export async function generateStreakCard({
   
   // Ensure text is visible on light backgrounds - always override for light themes
   const bgColor = cardColors.background || defaultColors.background;
-  const isLightBg = bgColor.toLowerCase() === '#ffffff' || 
-                     bgColor.toLowerCase() === '#fff' ||
-                     (bgColor.startsWith('#') && bgColor.length >= 7 &&
-                      parseInt(bgColor.substring(1, 3), 16) > 240 &&
-                      parseInt(bgColor.substring(3, 5), 16) > 240 &&
-                      parseInt(bgColor.substring(5, 7), 16) > 240);
+  const isLightBg = isLightBackground(bgColor);
   
   if (isLightBg) {
     // Always override text colors for light backgrounds to ensure visibility
