@@ -43,15 +43,6 @@ export const fetchGitHubData = async (username) => {
     );
     
     const { data } = response;
-    
-    // Store rate limit info for potential use
-    if (response.headers) {
-      data._rateLimit = {
-        remaining: response.headers['x-ratelimit-remaining'],
-        limit: response.headers['x-ratelimit-limit'],
-        reset: response.headers['x-ratelimit-reset']
-      };
-    }
 
     // Check for GraphQL errors
     if (data.errors) {
@@ -83,17 +74,10 @@ export const fetchGitHubData = async (username) => {
       }))
     );
 
-    // Store rate limit info from response headers
-    const rateLimitInfo = {
-      remaining: response.headers['x-ratelimit-remaining'],
-      limit: response.headers['x-ratelimit-limit'],
-      reset: response.headers['x-ratelimit-reset']
-    };
-
     // Prepare result
-    const result = { days, rateLimitInfo };
+    const result = { days };
 
-    // Return both days and rate limit info
+    // Return days
     return result;
   } catch (err) {
     // Log the actual error for debugging
@@ -115,9 +99,9 @@ export const fetchGitHubData = async (username) => {
         notFoundError.statusCode = 404;
         throw notFoundError;
       } else if (err.response.status === 403) {
-        const rateLimitError = new Error('Rate limit exceeded');
-        rateLimitError.statusCode = 403;
-        throw rateLimitError;
+        const forbiddenError = new Error('Access forbidden');
+        forbiddenError.statusCode = 403;
+        throw forbiddenError;
       } else if (err.response.status === 401) {
         const authError = new Error('GitHub authentication failed - invalid token');
         authError.statusCode = 500;

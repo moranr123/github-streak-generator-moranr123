@@ -106,7 +106,6 @@ export function InstructionsModal({ isOpen, onClose }) {
             <h3>❓ Troubleshooting</h3>
             <ul>
               <li><strong>User not found:</strong> Check that the username is spelled correctly</li>
-              <li><strong>Rate limit exceeded:</strong> Wait a few minutes and try again</li>
               <li><strong>Card not loading:</strong> Check your internet connection</li>
               <li><strong>Server error:</strong> The service may be temporarily unavailable</li>
             </ul>

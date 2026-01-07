@@ -37,7 +37,6 @@ function App() {
     error,
     imageError,
     cardLoaded,
-    rateLimitInfo,
     generateCard,
     updateCardUrl,
     handleImageLoad,
@@ -311,16 +310,6 @@ function App() {
                 </div>
               )}
               
-              {rateLimitInfo.remaining !== null && rateLimitInfo.remaining < 10 && (
-                <div className="rate-limit-warning" role="status" aria-live="polite">
-                  ⚠️ API rate limit: {rateLimitInfo.remaining} requests remaining
-                  {rateLimitInfo.reset && (
-                    <span className="rate-limit-reset">
-                      {' '}(resets at {rateLimitInfo.reset.toLocaleTimeString()})
-                    </span>
-                  )}
-                </div>
-              )}
               
               {!isOnline && (
                 <div className="offline-indicator" role="status" aria-live="polite">

@@ -2,23 +2,21 @@ import express from "express";
 import { getStreak, getStreakCard } from "../controllers/streakController.js";
 import { getCacheStats, clearCache } from "../controllers/cacheController.js";
 import { getHealth } from "../controllers/healthController.js";
-import { apiLimiter, cardGenerationLimiter } from "../middleware/rateLimiter.js";
+import { validateUsername, validateCardParams } from "../middleware/validation.js";
 
 const router = express.Router();
 
-// Health check endpoint (no rate limiting)
+// Health check endpoint
 router.get("/health", getHealth);
 
-// Cache management endpoints (with rate limiting)
-router.get("/cache/stats", apiLimiter, getCacheStats);
-router.delete("/cache", apiLimiter, clearCache);
+// Cache management endpoints
+router.get("/cache/stats", getCacheStats);
+router.delete("/cache", clearCache);
 
-import { validateUsername, validateCardParams } from "../middleware/validation.js";
+// JSON API endpoint
+router.get("/:username", validateUsername, getStreak);
 
-// Apply general rate limiting to JSON API
-router.get("/:username", apiLimiter, validateUsername, getStreak);
-
-// Apply stricter rate limiting to card generation endpoint
-router.get("/card/:username", cardGenerationLimiter, validateUsername, validateCardParams, getStreakCard);
+// Card generation endpoint
+router.get("/card/:username", validateUsername, validateCardParams, getStreakCard);
 
 export default router;

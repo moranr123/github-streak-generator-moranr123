@@ -5,7 +5,7 @@ import { generateStreakCard } from "../utils/streakCard.js";
 import { generateLanguagesCard } from "../utils/statsCard.js";
 import { logger } from "../middleware/logger.js";
 // Cache removed - no longer using caching
-import { processStreakData, setRateLimitHeaders } from "../utils/streakUtils.js";
+import { processStreakData } from "../utils/streakUtils.js";
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
@@ -13,9 +13,6 @@ export const getStreak = async (req, res) => {
   try {
     const result = await fetchGitHubData(username);
     const streakData = processStreakData(result);
-    
-    // Forward rate limit headers if available
-    setRateLimitHeaders(res, streakData.rateLimitInfo);
 
     // Log streak calculation
     logger.info({ 
@@ -134,11 +131,10 @@ export const getStreakCard = async (req, res) => {
 
     // Generate card based on stat type (no caching)
     let buffer;
-    if (statType === 'top_languages') {
-      const languageData = await fetchUserLanguages(username);
-      setRateLimitHeaders(res, languageData.rateLimitInfo);
-      
-      buffer = await generateLanguagesCard({
+      if (statType === 'top_languages') {
+        const languageData = await fetchUserLanguages(username);
+        
+        buffer = await generateLanguagesCard({
         username,
         languages: languageData.languages,
         avatarUrl,
@@ -151,12 +147,11 @@ export const getStreakCard = async (req, res) => {
       
       logger.info({ username, languageCount: languageData.languages.length }, 'Languages card generated');
     } else {
-      // Default: streak
-      const result = await fetchGitHubData(username);
-      const streakData = processStreakData(result);
-      setRateLimitHeaders(res, streakData.rateLimitInfo);
+        // Default: streak
+        const result = await fetchGitHubData(username);
+        const streakData = processStreakData(result);
 
-      buffer = await generateStreakCard({ 
+        buffer = await generateStreakCard({
         username, 
         current: streakData.current, 
         longest: streakData.longest, 

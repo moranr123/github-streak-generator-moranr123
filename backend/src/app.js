@@ -66,7 +66,7 @@ const corsOptions = {
   optionsSuccessStatus: 200,
   methods: ['GET', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
-  exposedHeaders: ['Content-Type', 'X-RateLimit-Remaining', 'X-RateLimit-Limit', 'X-RateLimit-Reset'],
+  exposedHeaders: ['Content-Type'],
 };
 
 app.use(cors(corsOptions));

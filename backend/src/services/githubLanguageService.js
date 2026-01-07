@@ -99,14 +99,7 @@ export const fetchUserLanguages = async (username) => {
       .sort((a, b) => b.size - a.size)
       .slice(0, 3); // Top 3 languages
 
-    // Store rate limit info from response headers
-    const rateLimitInfo = {
-      remaining: response.headers['x-ratelimit-remaining'],
-      limit: response.headers['x-ratelimit-limit'],
-      reset: response.headers['x-ratelimit-reset']
-    };
-
-    const result = { languages, rateLimitInfo };
+    const result = { languages };
     
     logger.info({ username, languageCount: languages.length }, 'GitHub languages fetched');
     
@@ -128,9 +121,9 @@ export const fetchUserLanguages = async (username) => {
         notFoundError.statusCode = 404;
         throw notFoundError;
       } else if (err.response.status === 403) {
-        const rateLimitError = new Error('Rate limit exceeded');
-        rateLimitError.statusCode = 403;
-        throw rateLimitError;
+        const forbiddenError = new Error('Access forbidden');
+        forbiddenError.statusCode = 403;
+        throw forbiddenError;
       } else if (err.response.status === 401) {
         const authError = new Error('GitHub authentication failed - invalid token');
         authError.statusCode = 500;

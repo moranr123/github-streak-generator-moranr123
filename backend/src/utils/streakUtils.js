@@ -20,24 +20,7 @@ export function extractContributions(result) {
   }
 }
 
-/**
- * Set rate limit headers on response
- * @param {Object} res - Express response object
- * @param {Object} rateLimitInfo - Rate limit information
- */
-export function setRateLimitHeaders(res, rateLimitInfo) {
-  if (rateLimitInfo) {
-    if (rateLimitInfo.remaining !== null && rateLimitInfo.remaining !== undefined) {
-      res.setHeader('X-RateLimit-Remaining', rateLimitInfo.remaining);
-    }
-    if (rateLimitInfo.limit !== null && rateLimitInfo.limit !== undefined) {
-      res.setHeader('X-RateLimit-Limit', rateLimitInfo.limit);
-    }
-    if (rateLimitInfo.reset !== null && rateLimitInfo.reset !== undefined) {
-      res.setHeader('X-RateLimit-Reset', rateLimitInfo.reset);
-    }
-  }
-}
+// Rate limit headers removed - no longer setting rate limit headers
 
 /**
  * Get first and last contribution dates
@@ -90,6 +73,6 @@ export function processStreakData(result) {
     total,
     firstContribution,
     lastContribution,
-    rateLimitInfo: result.rateLimitInfo
+    // Rate limit info removed
   };
 }

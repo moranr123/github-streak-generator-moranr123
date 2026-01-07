@@ -15,7 +15,7 @@ export function useCardGeneration(apiBase = API_BASE) {
   const [imageError, setImageError] = useState(false)
   const [cardLoaded, setCardLoaded] = useState(false)
   const [retryCount, setRetryCount] = useState(0)
-  const [rateLimitInfo, setRateLimitInfo] = useState({ remaining: null, reset: null })
+  // Rate limit info removed
   
   const retryTimeoutRef = useRef(null)
   const isOnline = navigator.onLine
@@ -100,20 +100,10 @@ export function useCardGeneration(apiBase = API_BASE) {
       try {
         const res = await fetch(img.src)
         
-        const remaining = res.headers.get('x-ratelimit-remaining')
-        const reset = res.headers.get('x-ratelimit-reset')
-        if (remaining !== null) {
-          setRateLimitInfo({ 
-            remaining: parseInt(remaining), 
-            reset: reset ? new Date(parseInt(reset) * 1000) : null 
-          })
-        }
-        
         if (res.status === 404) {
           setError('User not found. Please check the username and try again.')
         } else if (res.status === 403) {
-          const resetTime = reset ? new Date(parseInt(reset) * 1000).toLocaleTimeString() : 'later'
-          setError(`Rate limit exceeded. Please try again at ${resetTime}.`)
+          setError('Access forbidden. Please try again later.')
         } else if (res.status >= 500) {
           if (retryCount < 3) {
             setRetryCount(prev => prev + 1)
@@ -198,7 +188,6 @@ export function useCardGeneration(apiBase = API_BASE) {
     error,
     imageError,
     cardLoaded,
-    rateLimitInfo,
     generateCard,
     updateCardUrl,
     handleImageLoad,
