@@ -8,6 +8,7 @@ import { CardGenerator } from './components/CardGenerator'
 import { CustomizationPanel } from './components/CustomizationPanel'
 import { CardPreview } from './components/CardPreview'
 import { ShareButtons } from './components/ShareButtons'
+import { InstructionsModal } from './components/InstructionsModal'
 import { downloadCard } from './utils/downloadUtils'
 import { generateCardUrl } from './utils/cardUtils'
 
@@ -23,6 +24,7 @@ function App() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const [showInstructions, setShowInstructions] = useState(false)
   
   const usernameInputRef = useRef(null)
   
@@ -248,6 +250,18 @@ function App() {
           <div className="header-title">
             <img src={fireIcon} alt="Fire icon" className="fire-logo" />
             <h1>Github Streak Generator</h1>
+            <button
+              className="info-icon-button"
+              onClick={() => setShowInstructions(true)}
+              aria-label="Show instructions"
+              title="Click for instructions"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </button>
           </div>
         </header>
 
@@ -341,6 +355,11 @@ function App() {
           <span>{toast.message}</span>
         </div>
       )}
+      
+      <InstructionsModal 
+        isOpen={showInstructions} 
+        onClose={() => setShowInstructions(false)} 
+      />
     </div>
   )
 }
