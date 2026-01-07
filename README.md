@@ -127,20 +127,25 @@ github-streak-generator/
 └── README.md
 ```
 
-## API Endpoints
+## API Documentation
 
-### GET `/api/streak/:username`
-Get streak data in JSON format
+For complete API documentation, including all endpoints, parameters, rate limits, and usage examples, see [API.md](./API.md).
 
-### GET `/api/streak/card/:username`
-Get streak card as PNG image
+### Quick Reference
 
-#### Query Parameters
-- `theme` - Theme color (hex without #)
-- `fontSize` - Font size (small, normal, large)
-- `hideAvatar` - Hide profile image (true/false)
-- `cardWidth` - Card width in pixels (400-2000)
-- `cardHeight` - Card height in pixels (200-1200)
+**Base URL**: `http://localhost:5000/api/streak`
+
+**Main Endpoints**:
+- `GET /health` - Health check
+- `GET /:username` - Get streak data (JSON)
+- `GET /card/:username` - Generate streak card (PNG image)
+- `GET /cache/stats` - Get cache statistics
+- `DELETE /cache` - Clear cache
+
+**Rate Limits**:
+- General API: 100 requests per 15 minutes
+- Card generation: 30 requests per 15 minutes
+- Cache management: 10 requests per 15 minutes
 
 ## Development
 
