@@ -22,9 +22,10 @@ export const fetchGitHubData = async (username) => {
     throw tokenError;
   }
 
+  // Use GraphQL variables to prevent injection attacks
   const query = `
-    query {
-      user(login: "${username}") {
+    query($username: String!) {
+      user(login: $username) {
         contributionsCollection {
           contributionCalendar {
             weeks {
@@ -39,10 +40,12 @@ export const fetchGitHubData = async (username) => {
     }
   `;
 
+  const variables = { username };
+
   try {
     const response = await axios.post(
       "https://api.github.com/graphql",
-      { query },
+      { query, variables },
       {
         headers: {
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,

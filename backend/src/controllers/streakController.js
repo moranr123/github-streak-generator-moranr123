@@ -1,62 +1,36 @@
 // /src/controllers/streakController.js
 import { fetchGitHubData } from "../services/githubService.js";
-import { calculateStreaks } from "../utils/streakCalculator.js";
 import { generateStreakCard } from "../utils/streakCard.js";
 import { logger } from "../middleware/logger.js";
 import { cacheManager } from "../utils/cacheManager.js";
 import { getCardCacheKey, generateETag, CACHE_TTL } from "../utils/cacheUtils.js";
+import { processStreakData, setRateLimitHeaders } from "../utils/streakUtils.js";
 
 // JSON API (optional)
 export const getStreak = async (req, res) => {
   const { username } = req.params;
   try {
     const result = await fetchGitHubData(username);
-    
-    // Extract days array - result is now always { days, rateLimitInfo }
-    let contributions;
-    if (Array.isArray(result)) {
-      // Old format (shouldn't happen but handle it)
-      contributions = result;
-    } else if (result && result.days && Array.isArray(result.days)) {
-      // New format
-      contributions = result.days;
-    } else {
-      throw new Error('Invalid data format received from GitHub API');
-    }
+    const streakData = processStreakData(result);
     
     // Forward rate limit headers if available
-    if (result && result.rateLimitInfo) {
-      if (result.rateLimitInfo.remaining) {
-        res.setHeader('X-RateLimit-Remaining', result.rateLimitInfo.remaining);
-      }
-      if (result.rateLimitInfo.limit) {
-        res.setHeader('X-RateLimit-Limit', result.rateLimitInfo.limit);
-      }
-      if (result.rateLimitInfo.reset) {
-        res.setHeader('X-RateLimit-Reset', result.rateLimitInfo.reset);
-      }
-    }
-    
-    const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
-    const total = contributions.reduce((sum, day) => sum + day.count, 0);
-    
-    // Get first and last contribution dates for total contributions range
-    const contributionDays = contributions.filter(d => d.count > 0).sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
-      return dateA - dateB;
-    });
-    const firstContribution = contributionDays.length > 0 
-      ? contributionDays[0].date 
-      : null;
-    const lastContribution = contributionDays.length > 0 
-      ? contributionDays[contributionDays.length - 1].date 
-      : null;
+    setRateLimitHeaders(res, streakData.rateLimitInfo);
 
     // Log streak calculation
-    logger.info({ username, current, longest, total, daysCount: contributions.length }, 'Streak calculated');
+    logger.info({ 
+      username, 
+      current: streakData.current, 
+      longest: streakData.longest, 
+      total: streakData.total, 
+      daysCount: streakData.contributions.length 
+    }, 'Streak calculated');
 
-    const jsonResponse = { username, current, longest, total };
+    const jsonResponse = { 
+      username, 
+      current: streakData.current, 
+      longest: streakData.longest, 
+      total: streakData.total 
+    };
 
     res.json(jsonResponse);
   } catch (err) {
@@ -78,51 +52,18 @@ export const getStreakCard = async (req, res) => {
   const { username } = req.params;
   try {
     const result = await fetchGitHubData(username);
-    
-    // Extract days array - result is now always { days, rateLimitInfo }
-    let contributions;
-    if (Array.isArray(result)) {
-      // Old format (shouldn't happen but handle it)
-      contributions = result;
-    } else if (result && result.days && Array.isArray(result.days)) {
-      // New format
-      contributions = result.days;
-    } else {
-      throw new Error('Invalid data format received from GitHub API');
-    }
+    const streakData = processStreakData(result);
     
     // Forward rate limit headers if available
-    if (result && result.rateLimitInfo) {
-      if (result.rateLimitInfo.remaining) {
-        res.setHeader('X-RateLimit-Remaining', result.rateLimitInfo.remaining);
-      }
-      if (result.rateLimitInfo.limit) {
-        res.setHeader('X-RateLimit-Limit', result.rateLimitInfo.limit);
-      }
-      if (result.rateLimitInfo.reset) {
-        res.setHeader('X-RateLimit-Reset', result.rateLimitInfo.reset);
-      }
-    }
-    
-    // Validate contributions is an array before processing
-    if (!Array.isArray(contributions) || contributions.length === 0) {
-      throw new Error('No contribution data available');
-    }
-    
-    const { current, longest, currentRange, longestRange } = calculateStreaks(contributions);
-    const total = contributions.reduce((sum, day) => sum + day.count, 0);
-    
-    // Get first and last contribution dates for total contributions range
-    const contributionDays = contributions.filter(d => d.count > 0);
-    const firstContribution = contributionDays.length > 0 
-      ? contributionDays[0].date 
-      : null;
-    const lastContribution = contributionDays.length > 0 
-      ? contributionDays[contributionDays.length - 1].date 
-      : null;
+    setRateLimitHeaders(res, streakData.rateLimitInfo);
 
     // Log card generation
-    logger.info({ username, current, longest, total }, 'Card generated');
+    logger.info({ 
+      username, 
+      current: streakData.current, 
+      longest: streakData.longest, 
+      total: streakData.total 
+    }, 'Card generated');
 
     // Optional: fetch avatar from GitHub
     const avatarUrl = `https://github.com/${username}.png`;
@@ -258,19 +199,19 @@ export const getStreakCard = async (req, res) => {
       // Generate new card
       buffer = await generateStreakCard({ 
         username, 
-        current, 
-        longest, 
-        total, 
+        current: streakData.current, 
+        longest: streakData.longest, 
+        total: streakData.total, 
         avatarUrl, 
         colors,
         fontSize,
         hideAvatar,
         cardWidth,
         cardHeight,
-        currentRange,
-        longestRange,
-        firstContribution,
-        lastContribution
+        currentRange: streakData.currentRange,
+        longestRange: streakData.longestRange,
+        firstContribution: streakData.firstContribution,
+        lastContribution: streakData.lastContribution
       });
 
       // Cache the buffer as base64

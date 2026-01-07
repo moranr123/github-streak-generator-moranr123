@@ -1,10 +1,25 @@
 import express from "express";
 import cors from "cors";
 import compression from "compression";
+import helmet from "helmet";
 import streakRoutes from "./routes/streakRoutes.js";
 import { requestLogger, errorLogger } from "./middleware/logger.js";
+import { logger } from "./middleware/logger.js";
 
 const app = express();
+
+// Security headers middleware (should be first)
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Allow images from external sources
+}));
 
 // Request logging middleware (should be early in the chain)
 app.use(requestLogger);
@@ -22,12 +37,57 @@ app.use(compression({
   }
 }));
 
-app.use(cors());
-app.use(express.json());
+// Configure CORS with origin restrictions
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+  optionsSuccessStatus: 200,
+  methods: ['GET', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
+
+app.use(cors(corsOptions));
+
+// Request size limits to prevent DoS attacks
+app.use(express.json({ limit: '10kb' }));
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 
 app.use("/api/streak", streakRoutes);
 
 // Error logging middleware (should be after routes)
 app.use(errorLogger);
+
+// Final error handler middleware (must be last)
+app.use((err, req, res, next) => {
+  // Log error if not already logged
+  if (!res.headersSent) {
+    logger.error({ 
+      err: {
+        message: err.message,
+        stack: err.stack,
+        name: err.name
+      },
+      method: req.method,
+      url: req.url,
+      ip: req.ip || req.connection.remoteAddress
+    }, 'Unhandled error');
+    
+    // Send error response
+    const statusCode = err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production' && statusCode === 500
+      ? 'Internal server error'
+      : err.message || 'Internal server error';
+    
+    res.status(statusCode).json({
+      error: message,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+  }
+});
+
+// 404 handler for undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 export default app;

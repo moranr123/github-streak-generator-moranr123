@@ -90,6 +90,7 @@ class CacheManager {
 
   /**
    * Delete multiple keys matching a pattern
+   * Uses SCAN instead of KEYS to avoid blocking Redis
    * @param {string} pattern - Pattern to match (e.g., 'github:data:*')
    * @returns {Promise<number>} Number of keys deleted
    */
@@ -99,13 +100,35 @@ class CacheManager {
     }
 
     try {
-      const keys = await this.client.keys(pattern);
+      const keys = [];
+      let cursor = '0';
+      
+      // Use SCAN to iterate through keys matching the pattern
+      // This is non-blocking unlike KEYS command
+      do {
+        const result = await this.client.scan(cursor, {
+          MATCH: pattern,
+          COUNT: 100 // Scan 100 keys at a time
+        });
+        cursor = result.cursor;
+        keys.push(...result.keys);
+      } while (cursor !== '0');
+
       if (keys.length === 0) {
         return 0;
       }
-      await this.client.del(keys);
-      logger.info({ pattern, count: keys.length }, 'Cache pattern deleted');
-      return keys.length;
+      
+      // Delete keys in batches to avoid overwhelming Redis
+      const batchSize = 100;
+      let deletedCount = 0;
+      for (let i = 0; i < keys.length; i += batchSize) {
+        const batch = keys.slice(i, i + batchSize);
+        await this.client.del(batch);
+        deletedCount += batch.length;
+      }
+      
+      logger.info({ pattern, count: deletedCount }, 'Cache pattern deleted');
+      return deletedCount;
     } catch (error) {
       logger.error({ pattern, error: error.message }, 'Cache delete pattern error');
       return 0;
