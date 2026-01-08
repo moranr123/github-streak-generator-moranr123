@@ -92,6 +92,28 @@ export const getStreakCard = async (req, res) => {
     } else if (statType === 'repository_stats') {
         const repoStats = await fetchRepositoryStats(username);
         
+        // Parse displaySections from comma-separated string to object
+        let displaySectionsObj = {
+          totalRepos: true,
+          publicRepos: true,
+          privateRepos: true,
+          forks: true,
+          totalStars: true,
+          totalForks: true
+        };
+        
+        if (req.query.displaySections) {
+          const enabledSections = req.query.displaySections.split(',').map(s => s.trim());
+          displaySectionsObj = {
+            totalRepos: enabledSections.includes('totalRepos'),
+            publicRepos: enabledSections.includes('publicRepos'),
+            privateRepos: enabledSections.includes('privateRepos'),
+            forks: enabledSections.includes('forks'),
+            totalStars: enabledSections.includes('totalStars'),
+            totalForks: enabledSections.includes('totalForks')
+          };
+        }
+        
         buffer = await generateRepositoryStatsCard({
         username,
         stats: repoStats,
@@ -100,10 +122,11 @@ export const getStreakCard = async (req, res) => {
         fontSize,
         hideAvatar,
         cardWidth,
-        cardHeight
+        cardHeight,
+        displaySections: displaySectionsObj
       });
       
-      logger.info({ username, totalRepos: repoStats.totalRepos, totalStars: repoStats.totalStars }, 'Repository stats card generated');
+      logger.info({ username, totalRepos: repoStats.totalRepos, totalStars: repoStats.totalStars, displaySections: displaySectionsObj }, 'Repository stats card generated');
     } else {
         // Default: streak
         const result = await fetchGitHubData(username);

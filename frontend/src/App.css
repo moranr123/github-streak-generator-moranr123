@@ -1641,7 +1641,8 @@ select:focus-visible {
   }
 
   .checkbox-group {
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 12px;
   }
 
   .checkbox-label {
@@ -1871,11 +1872,11 @@ select:focus-visible {
 }
 
 .checkbox-group {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px 16px;
   margin-top: 4px;
-  flex-wrap: wrap;
+  width: 100%;
 }
 
 .checkbox-item {
@@ -1886,6 +1887,7 @@ select:focus-visible {
   padding: 0;
   font-size: 0;
   vertical-align: middle;
+  flex: 0 0 auto;
 }
 
 .checkbox-input {

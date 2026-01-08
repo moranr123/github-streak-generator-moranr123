@@ -73,3 +73,22 @@ export const DISPLAY_SECTION_OPTIONS = [
   { key: DISPLAY_SECTIONS.CURRENT, label: 'Current' },
   { key: DISPLAY_SECTIONS.LONGEST, label: 'Longest' }
 ]
+
+// Display sections for repository statistics cards
+export const REPOSITORY_DISPLAY_SECTIONS = {
+  TOTAL_REPOS: 'totalRepos',
+  PUBLIC_REPOS: 'publicRepos',
+  PRIVATE_REPOS: 'privateRepos',
+  FORKS: 'forks',
+  TOTAL_STARS: 'totalStars',
+  TOTAL_FORKS: 'totalForks'
+}
+
+export const REPOSITORY_DISPLAY_SECTION_OPTIONS = [
+  { key: REPOSITORY_DISPLAY_SECTIONS.TOTAL_REPOS, label: 'Repos' },
+  { key: REPOSITORY_DISPLAY_SECTIONS.PUBLIC_REPOS, label: 'Public' },
+  { key: REPOSITORY_DISPLAY_SECTIONS.PRIVATE_REPOS, label: 'Private' },
+  { key: REPOSITORY_DISPLAY_SECTIONS.FORKS, label: 'Forks' },
+  { key: REPOSITORY_DISPLAY_SECTIONS.TOTAL_STARS, label: 'Stars' },
+  { key: REPOSITORY_DISPLAY_SECTIONS.TOTAL_FORKS, label: 'Forked' }
+]

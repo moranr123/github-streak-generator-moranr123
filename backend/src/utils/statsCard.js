@@ -145,7 +145,15 @@ export async function generateRepositoryStatsCard({
   fontSize = 'normal',
   hideAvatar = false,
   cardWidth = 600,
-  cardHeight = 200
+  cardHeight = 200,
+  displaySections = {
+    totalRepos: true,
+    publicRepos: true,
+    privateRepos: true,
+    forks: true,
+    totalStars: true,
+    totalForks: true
+  }
 }) {
   // Default colors
   const defaultColors = {
@@ -240,62 +248,69 @@ export async function generateRepositoryStatsCard({
     return num.toString();
   };
   
-  // Calculate column positions - responsive based on card width
+  // Calculate column positions - 2 columns layout
   const padding = 20 * widthScale;
   const availableWidth = width - usernameX - padding;
-  const columnGap = Math.max(20 * widthScale, 20); // Minimum 20px gap
+  const columnGap = Math.max(20 * widthScale, 20); // Gap between columns
   const columnWidth = (availableWidth - columnGap) / 2;
   const leftColumnX = usernameX;
   const rightColumnX = usernameX + columnWidth + columnGap;
   
-  // Define stats in pairs (left, right)
-  const statPairs = [
-    [
-      { label: 'Total Repos', value: formatNumber(stats.totalRepos) },
-      { label: 'Public', value: formatNumber(stats.publicRepos) }
-    ],
-    [
-      { label: 'Private', value: formatNumber(stats.privateRepos) },
-      { label: 'Forks', value: formatNumber(stats.forks) }
-    ],
-    [
-      { label: 'Total Stars', value: formatNumber(stats.totalStars) },
-      { label: 'Total Forks', value: formatNumber(stats.totalForks) }
-    ]
+  // Define all available stats with their keys (one word labels)
+  const allStats = [
+    { key: 'totalRepos', label: 'Repos', value: formatNumber(stats.totalRepos) },
+    { key: 'publicRepos', label: 'Public', value: formatNumber(stats.publicRepos) },
+    { key: 'privateRepos', label: 'Private', value: formatNumber(stats.privateRepos) },
+    { key: 'forks', label: 'Forks', value: formatNumber(stats.forks) },
+    { key: 'totalStars', label: 'Stars', value: formatNumber(stats.totalStars) },
+    { key: 'totalForks', label: 'Forked', value: formatNumber(stats.totalForks) }
   ];
   
-  // Draw stats in rows with compact spacing and gaps between pairs
-  statPairs.forEach((pair, rowIndex) => {
+  // Filter stats based on displaySections
+  const visibleStats = allStats.filter(stat => displaySections[stat.key]);
+  
+  // Arrange visible stats into rows of 2 columns
+  const statRows = [];
+  for (let i = 0; i < visibleStats.length; i += 2) {
+    statRows.push([
+      visibleStats[i] || null,
+      visibleStats[i + 1] || null
+    ]);
+  }
+  
+  // Draw stats in rows with 2 columns
+  statRows.forEach((row, rowIndex) => {
     const rowY = statsStartY + (rowIndex * (statItemHeight + rowGap));
     const labelOffset = 12 * sizeMultiplier; // Compact spacing between label and value
     
-    // Draw left stat
-    const leftStat = pair[0];
-    ctx.fillStyle = isLightBg ? '#586069' : '#8b949e';
-    ctx.font = statLabelFont;
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(leftStat.label, leftColumnX, rowY);
+    // Define column positions
+    const columns = [
+      { stat: row[0], x: leftColumnX },
+      { stat: row[1], x: rightColumnX }
+    ];
     
-    ctx.fillStyle = cardColors.text;
-    ctx.font = statValueFont;
-    ctx.textBaseline = 'top';
-    ctx.fillText(leftStat.value, leftColumnX, rowY + labelOffset);
-    
-    // Draw right stat
-    const rightStat = pair[1];
-    ctx.fillStyle = isLightBg ? '#586069' : '#8b949e';
-    ctx.font = statLabelFont;
-    ctx.fillText(rightStat.label, rightColumnX, rowY);
-    
-    ctx.fillStyle = cardColors.text;
-    ctx.font = statValueFont;
-    ctx.fillText(rightStat.value, rightColumnX, rowY + labelOffset);
+    // Draw each stat in the row
+    columns.forEach(({ stat, x }) => {
+      if (stat) {
+        // Draw label
+        ctx.fillStyle = isLightBg ? '#586069' : '#8b949e';
+        ctx.font = statLabelFont;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(stat.label, x, rowY);
+        
+        // Draw value
+        ctx.fillStyle = cardColors.text;
+        ctx.font = statValueFont;
+        ctx.textBaseline = 'top';
+        ctx.fillText(stat.value, x, rowY + labelOffset);
+      }
+    });
   });
   
   // Most starred repo (if available and space permits)
   if (stats.mostStarredRepo && stats.mostStarredRepo.stars > 0) {
-    const lastRowY = statsStartY + (statPairs.length * statItemHeight);
+    const lastRowY = statsStartY + (statRows.length * statItemHeight);
     const remainingHeight = height - lastRowY - bottomPadding;
     
     // Only show if there's enough space

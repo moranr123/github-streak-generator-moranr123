@@ -276,7 +276,7 @@ function App() {
                 onExportFormatChange={(e) => customization.setExportFormat(e.target.value)}
                 onDisplaySectionsChange={(newSections) => {
                   customization.setDisplaySections(newSections)
-                  if (username.trim() && customization.statType === 'streak') {
+                  if (username.trim() && (customization.statType === 'streak' || customization.statType === 'repository_stats')) {
                     updateCardUrl(username, { ...customization.getCustomization(), displaySections: newSections })
                   }
                 }}

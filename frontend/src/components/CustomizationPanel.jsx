@@ -1,4 +1,4 @@
-import { THEMES, FONT_SIZES, EXPORT_FORMATS, CARD_DIMENSIONS, STAT_TYPES, DISPLAY_SECTION_OPTIONS, DISPLAY_SECTIONS } from '../utils/constants'
+import { THEMES, FONT_SIZES, EXPORT_FORMATS, CARD_DIMENSIONS, STAT_TYPES, DISPLAY_SECTION_OPTIONS, DISPLAY_SECTIONS, REPOSITORY_DISPLAY_SECTION_OPTIONS } from '../utils/constants'
 
 export function CustomizationPanel({
   statType,
@@ -78,6 +78,34 @@ export function CustomizationPanel({
           <label>Display Sections</label>
           <div className="checkbox-group">
             {DISPLAY_SECTION_OPTIONS.map((option) => (
+              <div key={option.key} className="checkbox-item">
+                <input
+                  type="checkbox"
+                  id={`display-${option.key}`}
+                  checked={displaySections[option.key] || false}
+                  onChange={(e) => {
+                    const newSections = {
+                      ...displaySections,
+                      [option.key]: e.target.checked
+                    }
+                    onDisplaySectionsChange(newSections)
+                  }}
+                  className="checkbox-input"
+                  aria-label={`Toggle ${option.label} section`}
+                /><label htmlFor={`display-${option.key}`} className="checkbox-label">
+                  {option.label}
+                </label>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {statType === STAT_TYPES.REPOSITORY_STATS && (
+        <div className="input-group">
+          <label>Display Sections</label>
+          <div className="checkbox-group">
+            {REPOSITORY_DISPLAY_SECTION_OPTIONS.map((option) => (
               <div key={option.key} className="checkbox-item">
                 <input
                   type="checkbox"

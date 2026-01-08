@@ -52,14 +52,27 @@ export const validateCardParams = (req, res, next) => {
     return res.status(400).json({ error: 'hideAvatar must be "true" or "false"' });
   }
   
-  // Validate displaySections (only for streak stat type)
-  // Format: comma-separated string like "total,current" or "total,current,longest"
+  // Validate displaySections based on stat type
+  // Format: comma-separated string
   if (displaySections) {
-    const validSectionKeys = ['total', 'current', 'longest'];
-    const sections = displaySections.split(',');
-    const invalidSections = sections.filter(s => !validSectionKeys.includes(s.trim()));
-    if (invalidSections.length > 0) {
-      return res.status(400).json({ error: `Invalid displaySections. Valid sections are: ${validSectionKeys.join(', ')}` });
+    const currentStatType = statType || 'streak';
+    let validSectionKeys;
+    
+    if (currentStatType === 'repository_stats') {
+      validSectionKeys = ['totalRepos', 'publicRepos', 'privateRepos', 'forks', 'totalStars', 'totalForks'];
+    } else if (currentStatType === 'streak') {
+      validSectionKeys = ['total', 'current', 'longest'];
+    } else {
+      // top_languages doesn't use displaySections, skip validation
+      validSectionKeys = null;
+    }
+    
+    if (validSectionKeys) {
+      const sections = displaySections.split(',');
+      const invalidSections = sections.filter(s => !validSectionKeys.includes(s.trim()));
+      if (invalidSections.length > 0) {
+        return res.status(400).json({ error: `Invalid displaySections. Valid sections are: ${validSectionKeys.join(', ')}` });
+      }
     }
   }
   

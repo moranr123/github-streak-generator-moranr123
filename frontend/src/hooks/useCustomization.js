@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { validateCardWidth, validateCardHeight } from '../utils/validation'
-import { STAT_TYPES, DISPLAY_SECTIONS } from '../utils/constants'
+import { STAT_TYPES, DISPLAY_SECTIONS, REPOSITORY_DISPLAY_SECTIONS } from '../utils/constants'
 
 /**
  * Custom hook for card customization state management
@@ -40,19 +40,28 @@ export function useCustomization() {
   const [heightError, setHeightError] = useState('')
   const [exportFormat, setExportFormat] = useState('png')
   const [displaySections, setDisplaySections] = useState(() => {
+    const defaultSections = {
+      [DISPLAY_SECTIONS.TOTAL]: true,
+      [DISPLAY_SECTIONS.CURRENT]: true,
+      [DISPLAY_SECTIONS.LONGEST]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.TOTAL_REPOS]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.PUBLIC_REPOS]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.PRIVATE_REPOS]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.FORKS]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.TOTAL_STARS]: true,
+      [REPOSITORY_DISPLAY_SECTIONS.TOTAL_FORKS]: true
+    }
+
     const saved = localStorage.getItem('displaySections')
     if (saved) {
       try {
-        return JSON.parse(saved)
+        const parsed = JSON.parse(saved)
+        return { ...defaultSections, ...parsed }
       } catch {
-        // Fallback to default if parsing fails
+        // Fallback to defaults if parsing fails
       }
     }
-    return {
-      [DISPLAY_SECTIONS.TOTAL]: true,
-      [DISPLAY_SECTIONS.CURRENT]: true,
-      [DISPLAY_SECTIONS.LONGEST]: true
-    }
+    return defaultSections
   })
 
   // Save to localStorage when values change

@@ -27,13 +27,28 @@ export function buildCustomizationParams(customization) {
   
   // Add displaySections for streak cards
   if (statType === 'streak' && displaySections && typeof displaySections === 'object') {
+    const streakSectionKeys = ['total', 'current', 'longest'];
     const enabledSections = Object.entries(displaySections)
-      .filter(([_, enabled]) => enabled)
+      .filter(([key, enabled]) => enabled && streakSectionKeys.includes(key))
       .map(([key, _]) => key)
       .join(',');
     
     // Only add if not all sections are enabled (default)
     if (enabledSections && enabledSections !== 'total,current,longest') {
+      params.append('displaySections', enabledSections);
+    }
+  }
+  
+  // Add displaySections for repository stats cards
+  if (statType === 'repository_stats' && displaySections && typeof displaySections === 'object') {
+    const repoSectionKeys = ['totalRepos', 'publicRepos', 'privateRepos', 'forks', 'totalStars', 'totalForks'];
+    const enabledSections = Object.entries(displaySections)
+      .filter(([key, enabled]) => enabled && repoSectionKeys.includes(key))
+      .map(([key, _]) => key)
+      .join(',');
+    
+    // Only add if not all sections are enabled (default)
+    if (enabledSections && enabledSections !== 'totalRepos,publicRepos,privateRepos,forks,totalStars,totalForks') {
       params.append('displaySections', enabledSections);
     }
   }
