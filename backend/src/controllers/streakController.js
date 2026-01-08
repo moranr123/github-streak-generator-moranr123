@@ -6,6 +6,8 @@ import { generateLanguagesCard, generateRepositoryStatsCard } from "../utils/sta
 import { logger } from "../middleware/logger.js";
 import { processStreakData } from "../utils/streakUtils.js";
 import { generateColorsFromTheme } from "../utils/colorUtils.js";
+import { cacheManager } from "../utils/cacheManager.js";
+import { CACHE_TTL } from "../utils/cacheUtils.js";
 
 /**
  * Handle API errors and send appropriate response
@@ -144,7 +146,20 @@ export const getStreakCard = async (req, res) => {
       logger.info({ username, current: streakData.current, longest: streakData.longest, displaySections: displaySectionsObj }, 'Streak card generated');
     }
 
-    // Set HTTP headers for images (no caching)
+    // Store in cache if cache key is available (set by cache middleware)
+    if (req.cacheKey && cacheManager.isEnabled()) {
+      try {
+        // Store buffer as base64 string for Redis compatibility
+        const bufferBase64 = buffer.toString('base64');
+        await cacheManager.set(req.cacheKey, bufferBase64, CACHE_TTL.CARD_IMAGE);
+        logger.info({ username, cacheKey: req.cacheKey }, 'Card stored in cache');
+      } catch (cacheError) {
+        // Don't fail the request if cache storage fails
+        logger.error({ error: cacheError.message, cacheKey: req.cacheKey }, 'Failed to store card in cache');
+      }
+    }
+
+    // Set HTTP headers for images (no browser caching, but server-side cache is used)
     res.setHeader("Content-Type", "image/png");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // Disable browser caching
     res.setHeader("Pragma", "no-cache");

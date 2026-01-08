@@ -4,6 +4,7 @@ import { getCacheStats, clearCache } from "../controllers/cacheController.js";
 import { getHealth } from "../controllers/healthController.js";
 import { validateUsername, validateCardParams } from "../middleware/validation.js";
 import { generalApiLimiter, cardGenerationLimiter, strictLimiter } from "../middleware/rateLimiter.js";
+import { cardCacheMiddleware } from "../middleware/cacheMiddleware.js";
 
 const router = express.Router();
 
@@ -17,7 +18,8 @@ router.delete("/cache", strictLimiter, clearCache);
 // JSON API endpoint (general rate limit)
 router.get("/:username", generalApiLimiter, validateUsername, getStreak);
 
-// Card generation endpoint (stricter rate limit - resource intensive)
-router.get("/card/:username", cardGenerationLimiter, validateUsername, validateCardParams, getStreakCard);
+// Card generation endpoint (cache middleware first, then rate limiter - resource intensive)
+// Cache middleware runs first: if cache hit, serves directly without counting against rate limit
+router.get("/card/:username", cardCacheMiddleware, cardGenerationLimiter, validateUsername, validateCardParams, getStreakCard);
 
 export default router;
