@@ -89,6 +89,94 @@ npm run dev
 
 3. Open your browser and navigate to `http://localhost:5173`
 
+## Deployment
+
+### Railway Deployment
+
+This project is configured for deployment on Railway. Follow these steps:
+
+#### Prerequisites
+- A Railway account (sign up at [railway.app](https://railway.app))
+- GitHub repository with your code
+- GitHub Personal Access Token (for backend API calls)
+
+#### Backend Deployment
+
+1. **Create a new Railway project**
+   - Go to [railway.app](https://railway.app) and create a new project
+   - Select "Deploy from GitHub repo"
+   - Choose your repository
+
+2. **Configure Backend Service**
+   - Add a new service and select "GitHub Repo"
+   - Set the **Root Directory** to `backend`
+   - Railway will automatically detect the Dockerfile
+
+3. **Set Environment Variables**
+   - Go to the backend service → Variables tab
+   - Add the following variables:
+     ```
+     GITHUB_TOKEN=your_github_token_here
+     PORT=5000
+     LOG_LEVEL=info
+     NODE_ENV=production
+     FRONTEND_URL=https://your-frontend.railway.app
+     ```
+   - **Important**: Replace `your-frontend.railway.app` with your actual frontend URL (you'll get this after deploying the frontend, or update it later)
+   - Railway will automatically assign a `PORT` - you can use `${{PORT}}` or keep `5000`
+
+4. **Deploy**
+   - Railway will automatically build and deploy
+   - Note the generated URL (e.g., `https://your-backend.railway.app`)
+
+#### Frontend Deployment
+
+1. **Add Frontend Service**
+   - In the same Railway project, add another service
+   - Select "GitHub Repo" again
+   - Set the **Root Directory** to `frontend`
+
+2. **Set Environment Variables**
+   - Go to the frontend service → Variables tab
+   - Add:
+     ```
+     VITE_API_BASE_URL=https://your-backend.railway.app/api/streak
+     PORT=5173
+     NODE_ENV=production
+     ```
+   - Replace `your-backend.railway.app` with your actual backend URL
+
+3. **Deploy**
+   - Railway will build the frontend and deploy
+   - The frontend will be available at the generated URL
+
+#### Post-Deployment
+
+1. **Update CORS settings**
+   - After deploying the frontend, update the backend's `FRONTEND_URL` environment variable
+   - Go to backend service → Variables → Update `FRONTEND_URL` with your frontend URL
+   - The backend will automatically restart and apply the new CORS settings
+
+2. **Test the deployment**
+   - Visit your frontend URL
+   - Generate a streak card to verify everything works
+   - Check browser console for any CORS errors
+
+#### Railway Configuration Files
+
+The project includes:
+- `backend/Dockerfile` - Docker configuration for backend (required for Canvas native dependencies)
+- `backend/railway.json` - Railway configuration for backend
+- `frontend/railway.json` - Railway configuration for frontend
+- `frontend/server.js` - Express server to serve built frontend files
+
+#### Troubleshooting
+
+- **Canvas build errors**: The Dockerfile includes all required native dependencies
+- **CORS errors**: Ensure `VITE_API_BASE_URL` matches your backend URL exactly
+- **Port issues**: Railway automatically assigns ports - use `process.env.PORT` in your code
+- **Build failures**: Check Railway logs for specific error messages
+
 ## Testing
 
 ### Frontend Tests
