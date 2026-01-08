@@ -109,8 +109,9 @@ This project is configured for deployment on Railway. Follow these steps:
 
 2. **Configure Backend Service**
    - Add a new service and select "GitHub Repo"
-   - Set the **Root Directory** to `backend`
-   - Railway will automatically detect the Dockerfile
+   - **CRITICAL**: In the service settings, go to "Settings" → "Root Directory" and set it to `backend`
+   - Railway will automatically detect the Dockerfile in the backend directory
+   - Without setting the root directory, Railway will try to build from the repo root and fail
 
 3. **Set Environment Variables**
    - Go to the backend service → Variables tab
@@ -134,7 +135,8 @@ This project is configured for deployment on Railway. Follow these steps:
 1. **Add Frontend Service**
    - In the same Railway project, add another service
    - Select "GitHub Repo" again
-   - Set the **Root Directory** to `frontend`
+   - **CRITICAL**: In the service settings, go to "Settings" → "Root Directory" and set it to `frontend`
+   - Without setting the root directory, Railway will try to build from the repo root and fail
 
 2. **Set Environment Variables**
    - Go to the frontend service → Variables tab
@@ -166,12 +168,18 @@ This project is configured for deployment on Railway. Follow these steps:
 
 The project includes:
 - `backend/Dockerfile` - Docker configuration for backend (required for Canvas native dependencies)
-- `backend/railway.json` - Railway configuration for backend
-- `frontend/railway.json` - Railway configuration for frontend
+- `backend/railway.json` - Railway configuration for backend service
+- `frontend/railway.json` - Railway configuration for frontend service
 - `frontend/server.js` - Express server to serve built frontend files
+
+**Important**: Each service must have its **Root Directory** set correctly in Railway's service settings. The railway.json files in each subdirectory will only be used when the root directory is properly configured.
 
 #### Troubleshooting
 
+- **Nixpacks build failed / Unable to generate build plan**: 
+  - This means Railway is trying to build from the repo root instead of the service directory
+  - **Solution**: Make sure you've set the **Root Directory** in each service's settings to `backend` or `frontend` respectively
+  - Go to Service → Settings → Root Directory and set it correctly
 - **Canvas build errors**: The Dockerfile includes all required native dependencies
 - **CORS errors**: Ensure `VITE_API_BASE_URL` matches your backend URL exactly
 - **Port issues**: Railway automatically assigns ports - use `process.env.PORT` in your code
