@@ -11,6 +11,7 @@ import { ShareButtons } from './components/ShareButtons'
 import { InstructionsModal } from './components/InstructionsModal'
 import { downloadCard } from './utils/downloadUtils'
 import { generateCardUrl, buildShareUrl } from './utils/cardUtils'
+import { GITHUB_REPO_URL } from './utils/constants'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/streak'
 
@@ -218,21 +219,47 @@ function App() {
       
       <div className="container">
         <header role="banner">
-          <div className="header-title">
-            <img src={statsIcon} alt="Stats icon" className="stats-logo" />
-            <h1>Github stats generator</h1>
-            <button
-              className="info-icon-button"
-              onClick={() => setShowInstructions(true)}
-              aria-label="Show instructions"
-              title="Click for instructions"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="12" y1="16" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12.01" y2="8"></line>
-              </svg>
-            </button>
+          <div className="header-content">
+            <div className="header-title">
+              <img src={statsIcon} alt="Stats icon" className="stats-logo" />
+              <h1>Github stats generator</h1>
+              <button
+                className="info-icon-button"
+                onClick={() => setShowInstructions(true)}
+                aria-label="Show instructions"
+                title="Click for instructions"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="16" x2="12" y2="12"></line>
+                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="header-actions">
+              <button
+                className="github-action-button star-button"
+                onClick={() => window.open(GITHUB_REPO_URL, '_blank', 'noopener,noreferrer')}
+                aria-label="Star this repository on GitHub"
+                title="Star this repository on GitHub"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25">
+                  <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path>
+                </svg>
+                <span className="button-label">Star</span>
+              </button>
+              <button
+                className="github-action-button fork-button"
+                onClick={() => window.open(`${GITHUB_REPO_URL}/fork`, '_blank', 'noopener,noreferrer')}
+                aria-label="Fork this repository on GitHub"
+                title="Fork this repository on GitHub"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25">
+                  <path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Zm0 2.122a2.25 2.25 0 1 1-3 2.122v.878A2.25 2.25 0 0 1 5.75 10.5h1.5v2.128a2.251 2.251 0 1 1-1.5 0v-.878a2.25 2.25 0 0 1-1.5-2.122v-.878a2.25 2.25 0 0 1 1.5-2.122ZM3.25 9a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm4.5 4.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM5.75 9a.75.75 0 0 0 0 1.5h1.5a.75.75 0 0 0 0-1.5h-1.5Zm-1.5-2.378a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm13.5 0a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0ZM13.25 9a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM9 12.25a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm3.25.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM9 3.25a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM12.25 4a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm-1.5 1.5a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Zm-7 0a.75.75 0 0 0 0 1.5.75.75 0 0 0 0-1.5Zm1.5-1.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm6 0a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"></path>
+                </svg>
+                <span className="button-label">Fork</span>
+              </button>
+            </div>
           </div>
         </header>
 

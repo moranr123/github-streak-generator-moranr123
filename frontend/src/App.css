@@ -146,19 +146,144 @@ header {
   outline-offset: 2px;
 }
 
+.header-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
 .header-title {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 12px;
   position: relative;
+  width: 100%;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.github-action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #24292f;
+  background: #f6f8fa;
+  border: 1px solid rgba(27, 31, 36, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s cubic-bezier(0.3, 0, 0.1, 1), border-color 0.2s cubic-bezier(0.3, 0, 0.1, 1);
+  outline: none;
+  text-decoration: none;
+  white-space: nowrap;
+  line-height: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  vertical-align: middle;
+  position: relative;
+}
+
+.github-action-button:hover {
+  background: #f3f4f6;
+  border-color: rgba(27, 31, 36, 0.2);
+}
+
+.github-action-button:active {
+  background: #edeff2;
+  border-color: rgba(27, 31, 36, 0.25);
+}
+
+.github-action-button:focus-visible {
+  outline: 2px solid #0969da;
+  outline-offset: 2px;
+}
+
+.github-action-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: text-bottom;
+  fill: currentColor;
+}
+
+.github-action-button .button-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #24292f;
+  line-height: 20px;
+}
+
+.star-button {
+  color: #24292f;
+}
+
+.star-button:hover {
+  background: #f3f4f6;
+}
+
+.star-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+.fork-button {
+  color: #24292f;
+}
+
+.fork-button:hover {
+  background: #f3f4f6;
+}
+
+.fork-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+
+/* Dark mode styles */
+[data-theme="dark"] .github-action-button {
+  color: #24292f;
+  background: #ffffff;
+  border-color: rgba(27, 31, 36, 0.15);
+}
+
+[data-theme="dark"] .github-action-button:hover {
+  background: #f3f4f6;
+  border-color: rgba(27, 31, 36, 0.2);
+}
+
+[data-theme="dark"] .github-action-button:active {
+  background: #edeff2;
+  border-color: rgba(27, 31, 36, 0.25);
+}
+
+[data-theme="dark"] .github-action-button .button-label {
+  color: #24292f;
+}
+
+[data-theme="dark"] .star-button,
+[data-theme="dark"] .fork-button {
+  color: #24292f;
+}
+
+[data-theme="dark"] .star-button svg,
+[data-theme="dark"] .fork-button svg {
+  stroke: currentColor;
+}
+
+
 .info-icon-button {
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   background: transparent;
   border: none;
   color: var(--text-secondary);
@@ -1528,10 +1653,23 @@ select:focus-visible {
     align-items: center;
   }
 
-  .info-icon-button {
-    position: static;
-    transform: none;
-    margin-top: 8px;
+  .header-content {
+    gap: 12px;
+  }
+
+  .header-actions {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .github-action-button {
+    padding: 4px 10px;
+    font-size: 0.8125rem;
+  }
+
+  .github-action-button svg {
+    width: 14px;
+    height: 14px;
   }
 
   .stats-logo {

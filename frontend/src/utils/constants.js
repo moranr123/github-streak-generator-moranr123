@@ -92,3 +92,6 @@ export const REPOSITORY_DISPLAY_SECTION_OPTIONS = [
   { key: REPOSITORY_DISPLAY_SECTIONS.TOTAL_STARS, label: 'Stars' },
   { key: REPOSITORY_DISPLAY_SECTIONS.TOTAL_FORKS, label: 'Forked' }
 ]
+
+// GitHub repository URL for starring
+export const GITHUB_REPO_URL = import.meta.env.VITE_GITHUB_REPO_URL || 'https://github.com/moranr123/github-streak-generator-moranr123'
