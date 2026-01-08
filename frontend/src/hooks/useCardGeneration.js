@@ -101,7 +101,7 @@ export function useCardGeneration(apiBase = API_BASE) {
         const res = await fetch(img.src)
         
         if (res.status === 404) {
-          setError('User not found. Please check the username and try again.')
+          setError('User not found.\nPlease check the username and try again.')
         } else if (res.status === 403) {
           setError('Access forbidden. Please try again later.')
         } else if (res.status >= 500) {
