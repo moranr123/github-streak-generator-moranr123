@@ -369,6 +369,10 @@ function App() {
             </div>
           </div>
         </div>
+
+        <footer role="contentinfo" className="app-footer">
+          <p>&copy; {new Date().getFullYear()} GitHub Stats Generator. All rights reserved.</p>
+        </footer>
       </div>
       
       {toast.show && (
