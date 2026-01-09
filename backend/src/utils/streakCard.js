@@ -52,11 +52,22 @@ export async function generateStreakCard({
   // Use provided width and height, with validation
   const width = Math.max(400, Math.min(2000, Math.round(cardWidth)));
   const height = Math.max(200, Math.min(1200, Math.round(cardHeight)));
+  
+  // Use 2x pixel ratio for crisp rendering
+  const pixelRatio = 2;
+  const canvas = createCanvas(width * pixelRatio, height * pixelRatio);
+  const ctx = canvas.getContext("2d");
+  
+  // Scale context to match pixel ratio
+  ctx.scale(pixelRatio, pixelRatio);
+  
+  // Enable high-quality image smoothing for crisp rendering
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  
   const widthMultiplier = width / 800; // Multiplier for horizontal scaling
   const heightMultiplier = height / 400; // Multiplier for vertical scaling
   const sizeMultiplier = Math.min(widthMultiplier, heightMultiplier); // Use smaller for proportional scaling
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext("2d");
 
   // Dark purple background
   ctx.fillStyle = cardColors.background;
@@ -236,12 +247,10 @@ export async function generateStreakCard({
     ctx.arc(middleCenterX, circleY, circleRadius, 0, Math.PI * 2);
     ctx.stroke();
     
-    // Flame icon above circle
-    ctx.fillStyle = cardColors.currentStreak;
-    ctx.font = `bold ${Math.round(32 * combinedMultiplier)}px 'Segoe UI', Arial, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText("🔥", middleCenterX, circleY - circleRadius - 15 * vScale);
+    // Flame icon above circle - draw using paths instead of emoji
+    const flameSize = Math.round(32 * combinedMultiplier);
+    const flameY = circleY - circleRadius - 15 * vScale;
+    drawFireIcon(ctx, middleCenterX, flameY, flameSize, cardColors.currentStreak);
     
     // Number inside circle
     ctx.fillStyle = cardColors.currentStreak;
@@ -345,5 +354,66 @@ export async function generateStreakCard({
     }
   }
 
-  return canvas.toBuffer("image/png");
+  // Scale down the canvas to the original size for output
+  const outputCanvas = createCanvas(width, height);
+  const outputCtx = outputCanvas.getContext("2d");
+  outputCtx.imageSmoothingEnabled = true;
+  outputCtx.imageSmoothingQuality = 'high';
+  outputCtx.drawImage(canvas, 0, 0, width, height);
+  
+  return outputCanvas.toBuffer("image/png");
+}
+
+/**
+ * Draw a fire/flame icon using canvas paths
+ * @param {CanvasRenderingContext2D} ctx - Canvas context
+ * @param {number} x - Center X position
+ * @param {number} y - Center Y position
+ * @param {number} size - Size of the icon
+ * @param {string} color - Color of the flame
+ */
+function drawFireIcon(ctx, x, y, size, color) {
+  const scale = size / 32; // Base size is 32
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(scale, scale);
+  
+  // Create gradient for fire effect
+  const gradient = ctx.createLinearGradient(0, -16, 0, 16);
+  gradient.addColorStop(0, color);
+  gradient.addColorStop(0.5, color);
+  gradient.addColorStop(1, '#ff6b00'); // Darker orange at bottom
+  
+  ctx.fillStyle = gradient;
+  ctx.strokeStyle = '#ff4500';
+  ctx.lineWidth = 0.5; // Thin outline for flame
+  
+  // Draw flame shape using bezier curves
+  ctx.beginPath();
+  // Left flame
+  ctx.moveTo(-8, 12);
+  ctx.bezierCurveTo(-10, 8, -12, 0, -8, -8);
+  ctx.bezierCurveTo(-6, -12, -4, -14, 0, -16);
+  // Right flame
+  ctx.bezierCurveTo(4, -14, 6, -12, 8, -8);
+  ctx.bezierCurveTo(12, 0, 10, 8, 8, 12);
+  // Bottom
+  ctx.lineTo(-8, 12);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Inner flame highlight
+  ctx.fillStyle = '#ffaa00';
+  ctx.beginPath();
+  ctx.moveTo(-4, 8);
+  ctx.bezierCurveTo(-5, 4, -6, -2, -4, -6);
+  ctx.bezierCurveTo(-3, -8, -2, -10, 0, -12);
+  ctx.bezierCurveTo(2, -10, 3, -8, 4, -6);
+  ctx.bezierCurveTo(6, -2, 5, 4, 4, 8);
+  ctx.lineTo(-4, 8);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.restore();
 }

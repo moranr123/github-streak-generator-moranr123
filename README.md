@@ -2,6 +2,8 @@
 
 A web application to generate beautiful GitHub contribution streak cards with customizable themes and export options.
 
+🌐 **Live Demo**: [https://github-stats-generator.up.railway.app/](https://github-stats-generator.up.railway.app/)
+
 ## Credits
 
 This project is based on the original work by [DenverCoder1](https://github.com/DenverCoder1). We extend our gratitude for the initial implementation and inspiration.
