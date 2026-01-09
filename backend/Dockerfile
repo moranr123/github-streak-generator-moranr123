@@ -1,26 +1,23 @@
-FROM node:18-alpine
-
-# Install canvas dependencies
-RUN apk add --no-cache \
-    cairo-dev \
-    jpeg-dev \
-    pango-dev \
-    giflib-dev \
-    pixman-dev
+FROM node:20-bookworm
 
 WORKDIR /app
 
-# Copy package files
+# Install canvas & native build deps
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# Copy application files
 COPY . .
 
-# Expose port
 EXPOSE 5000
 
-# Start the server
 CMD ["node", "src/server.js"]
