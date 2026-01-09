@@ -1,4 +1,4 @@
-# Github stats generator
+# GitHub Stats Generator
 
 A web application to generate beautiful GitHub contribution streak cards with customizable themes and export options.
 
@@ -91,6 +91,43 @@ npm run dev
 
 3. Open your browser and navigate to `http://localhost:5173`
 
+## SEO Optimization
+
+This project includes comprehensive SEO optimization:
+
+- **Meta Tags**: Complete meta description, keywords, and Open Graph tags
+- **Structured Data**: JSON-LD schema markup for better search engine understanding
+- **Sitemap**: XML sitemap for search engine crawling
+- **Robots.txt**: Properly configured robots.txt file
+- **Canonical URLs**: Prevents duplicate content issues
+
+### Google Search Console Setup
+
+To improve your Google search rankings:
+
+1. **Submit your sitemap**:
+   - Go to [Google Search Console](https://search.google.com/search-console)
+   - Add your property: `https://github-stats-generator.up.railway.app/`
+   - Navigate to Sitemaps section
+   - Submit: `https://github-stats-generator.up.railway.app/sitemap.xml`
+
+2. **Request Indexing**:
+   - Use the URL Inspection tool
+   - Request indexing for your main page
+
+3. **Monitor Performance**:
+   - Check search performance regularly
+   - Monitor Core Web Vitals
+   - Track keyword rankings
+
+### Additional SEO Tips
+
+- **Content**: Add a blog or documentation section with relevant keywords
+- **Backlinks**: Get links from GitHub repositories, tech blogs, and developer communities
+- **Social Sharing**: Share on Twitter, Reddit (r/webdev, r/github), and Hacker News
+- **Regular Updates**: Keep the site updated and add new features
+- **Page Speed**: Ensure fast loading times (already optimized with compression)
+
 ## Deployment
 
 ### Railway Deployment
@@ -161,7 +198,12 @@ This project is configured for deployment on Railway. Follow these steps:
    - Go to backend service → Variables → Update `FRONTEND_URL` with your frontend URL
    - The backend will automatically restart and apply the new CORS settings
 
-2. **Test the deployment**
+2. **Update SEO Meta Tags**
+   - Update the URLs in `frontend/index.html` to match your actual Railway URLs
+   - Update `frontend/public/sitemap.xml` with your actual URL
+   - Update `frontend/public/robots.txt` with your actual URL
+
+3. **Test the deployment**
    - Visit your frontend URL
    - Generate a streak card to verify everything works
    - Check browser console for any CORS errors
@@ -205,77 +247,10 @@ npm run test:watch    # Run tests in watch mode
 npm run test:coverage # Run tests with coverage
 ```
 
-## Project Structure
-
-```
-github-streak-generator/
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── utils/         # Utility functions and constants
-│   │   ├── test/          # Test setup files
-│   │   └── App.jsx        # Main application component
-│   └── package.json
-├── backend/
-│   ├── src/
-│   │   ├── controllers/   # Route controllers
-│   │   ├── middleware/   # Express middleware (logging, etc.)
-│   │   ├── routes/       # API routes
-│   │   ├── services/     # Business logic services
-│   │   ├── utils/        # Utility functions
-│   │   └── app.js        # Express app setup
-│   └── package.json
-└── README.md
-```
-
-## API Documentation
-
-For complete API documentation, including all endpoints, parameters, rate limits, and usage examples, see [API.md](./API.md).
-
-### Quick Reference
-
-**Base URL**: `http://localhost:5000/api/streak`
-
-**Main Endpoints**:
-- `GET /health` - Health check
-- `GET /:username` - Get streak data (JSON)
-- `GET /card/:username` - Generate streak card (PNG image)
-- `GET /cache/stats` - Get cache statistics
-- `DELETE /cache` - Clear cache
-
-**Rate Limits**:
-- General API: 100 requests per 15 minutes
-- Card generation: 30 requests per 15 minutes
-- Cache management: 10 requests per 15 minutes
-
-## Development
-
-### Code Organization
-
-The codebase follows a modular structure:
-
-- **Components**: Reusable UI components
-- **Hooks**: Custom React hooks for shared logic
-- **Utils**: Utility functions and constants
-- **Middleware**: Express middleware for logging and error handling
-
-### Adding New Features
-
-1. Create feature branch
-2. Write tests first (TDD approach)
-3. Implement feature
-4. Update documentation
-5. Submit pull request
-
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License
+This project is open source and available under the [MIT License](LICENSE).
