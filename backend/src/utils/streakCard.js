@@ -110,10 +110,18 @@ export async function generateStreakCard({
   // Load fire icon image
   let fireImage = null;
   try {
-    const fireImagePath = join(__dirname, 'assets', 'fire.png');
+    // __dirname is backend/src/utils, so go up one level to backend/src, then into assets
+    const fireImagePath = join(__dirname, '..', 'assets', 'fire.png');
+    logger.info({ path: fireImagePath, __dirname }, 'Attempting to load fire icon image');
     fireImage = await loadImage(fireImagePath);
+    logger.info({ path: fireImagePath, width: fireImage.width, height: fireImage.height }, 'Fire icon image loaded successfully');
   } catch (err) {
-    logger.warn({ error: err.message }, 'Failed to load fire icon image, will skip drawing it');
+    logger.error({ 
+      error: err.message, 
+      stack: err.stack,
+      path: join(__dirname, '..', 'assets', 'fire.png'),
+      __dirname 
+    }, 'Failed to load fire icon image, will skip drawing it');
   }
 
   // Load avatar with border (only if not hidden)
@@ -264,10 +272,22 @@ export async function generateStreakCard({
     // Flame icon above circle - load and draw fire.png image
     if (fireImage) {
       const flameSize = Math.round(36 * combinedMultiplier); // Slightly larger for better visibility
-      const flameY = circleY - circleRadius - 18 * vScale; // Positioned above circle
-      const flameX = middleCenterX - flameSize / 2;
-      const flameYPos = flameY - flameSize / 2;
-      ctx.drawImage(fireImage, flameX, flameYPos, flameSize, flameSize);
+      const flameCenterY = circleY - circleRadius - 18 * vScale; // Center Y position above circle
+      const flameX = middleCenterX - flameSize / 2; // Left edge (center minus half width)
+      const flameY = flameCenterY - flameSize / 2; // Top edge (center minus half height)
+      ctx.drawImage(fireImage, flameX, flameY, flameSize, flameSize);
+      logger.info({ 
+        flameX, 
+        flameY, 
+        flameSize, 
+        middleCenterX, 
+        circleY, 
+        circleRadius,
+        fireImageWidth: fireImage.width,
+        fireImageHeight: fireImage.height
+      }, 'Drawing fire icon');
+    } else {
+      logger.warn('Fire image not loaded, skipping fire icon');
     }
     
     // Number inside circle
