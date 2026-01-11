@@ -36,34 +36,47 @@
     
     <!-- Structured Data (JSON-LD) -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "GitHub Stats Generator",
-      "description": "Generate beautiful GitHub contribution streak cards with customizable themes. Create stunning visual cards for your GitHub profile, README, or website.",
-      "url": "https://github-stats-generator.up.railway.app/",
-      "applicationCategory": "DeveloperApplication",
-      "operatingSystem": "Web",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "5",
-        "ratingCount": "1"
-      },
-      "featureList": [
-        "Multiple theme options",
-        "Customizable card dimensions",
-        "Export as PNG",
-        "Dark mode support",
-        "Responsive design",
-        "Free to use"
-      ]
-    }
-    </script>
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "GitHub Stats Generator",
+        "description": "Generate beautiful GitHub contribution streak cards with customizable themes. Create stunning visual cards for your GitHub profile, README, or website.",
+        "url": "https://github-stats-generator.up.railway.app/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+      
+        "publisher": {
+          "@type": "Organization",
+          "name": "GitHub Stats Generator",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://github-stats-generator.up.railway.app/logo.png",
+            "width": 512,
+            "height": 512
+          }
+        },
+      
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "5",
+          "ratingCount": "1"
+        },
+        "featureList": [
+          "Multiple theme options",
+          "Customizable card dimensions",
+          "Export as PNG",
+          "Dark mode support",
+          "Responsive design",
+          "Free to use"
+        ]
+      }
+      </script>
+      
   </head>
   <body>
     <div id="root"></div>
