@@ -45,19 +45,32 @@ const corsOptions = {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       process.env.CORS_ORIGIN,
+      // Production frontend URL
+      'https://github-stats-generator.up.railway.app',
+      // Local development URLs
       'http://localhost:5173',
       'http://localhost:3000',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:3000'
     ].filter(Boolean);
     
-    if (!origin || allowedOrigins.includes(origin)) {
+    // Support comma-separated multiple origins in environment variables
+    const expandedOrigins = allowedOrigins.flatMap(origin => {
+      if (origin && origin.includes(',')) {
+        return origin.split(',').map(o => o.trim()).filter(Boolean);
+      }
+      return origin;
+    });
+    
+    if (!origin || expandedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       // In development, allow all origins
       if (process.env.NODE_ENV === 'development') {
         callback(null, true);
       } else {
+        // Log the rejected origin for debugging
+        logger.warn({ origin, allowedOrigins: expandedOrigins }, 'CORS request rejected');
         callback(new Error('Not allowed by CORS'));
       }
     }
